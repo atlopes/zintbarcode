@@ -9,6 +9,7 @@
 *
 
 #DEFINE	SAFETHIS		ASSERT !USED("This") AND TYPE("This") == "O"
+#DEFINE	ZBVFPSIG		"~zbvfp_"
 
 * install the classes
 SET PROCEDURE TO (SYS(16)) ADDITIVE
@@ -141,7 +142,7 @@ DEFINE CLASS ZintBarcode AS Custom
 			LOCAL Filename AS String
 			FOR EACH m.Filename IN This.ImageFiles
 				TRY
-					ERASE (ADDBS(This.TempFolder) + m.Filename)
+					ERASE (m.Filename)
 				CATCH
 				ENDTRY
 			ENDFOR
@@ -169,8 +170,6 @@ DEFINE CLASS ZintBarcode AS Custom
 
 		SAFETHIS
 
-		ZBarcode_Clear(This.Symbol)
-
 		IF PCOUNT() > 1
 			This.SetOutfile(m.Filename)
 		ENDIF
@@ -194,14 +193,17 @@ DEFINE CLASS ZintBarcode AS Custom
 		SAFETHIS
 
 		LOCAL Filename AS String
+		LOCAL Extension AS String
 		LOCAL ARRAY CheckFile(1)
+
+		m.Extension = EVL(m.ImageFormat, "gif")
 
 		IF This.SingleFile AND This.ImageFiles.Count > 0
 			m.Filename = This.ImageFiles(1)
 		ELSE
-			m.Filename = ADDBS(This.TempFolder) + FORCEEXT(SYS(3), m.ImageFormat)
+			m.Filename = ADDBS(This.TempFolder) + FORCEEXT(ZBVFPSIG + SYS(3), m.Extension)
 			DO WHILE ADIR(m.CheckFile, m.Filename) > 0
-				m.Filename = ADDBS(This.TempFolder) + FORCEEXT(SYS(3), m.ImageFormat)
+				m.Filename = ADDBS(This.TempFolder) + FORCEEXT(ZBVFPSIG + SYS(3), m.Extension)
 			ENDDO
 			This.ImageFiles.Add(m.Filename)
 		ENDIF
@@ -211,7 +213,7 @@ DEFINE CLASS ZintBarcode AS Custom
 
 		IF This.EncodeSave(m.InputData, m.Filename, m.Angle) = 0
 			RETURN m.Filename
-			* the filename can be used as a ControlSource in controls
+			* the filename can be used as a ControlSource or Picture in controls
 		ELSE
 			RETURN ""
 			* error should be checked by .GetErrorText()
@@ -219,7 +221,7 @@ DEFINE CLASS ZintBarcode AS Custom
 
 	ENDPROC
 
-	* a placeholder for dynamic settings (subclass ZintSymbol to use this feature)
+	* a placeholder for dynamic settings (subclass ZintBarcode to use this feature)
 	PROCEDURE DynamicSettings (InputData AS String)
 	ENDPROC
 
