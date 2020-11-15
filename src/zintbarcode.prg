@@ -188,7 +188,7 @@ DEFINE CLASS ZintBarcode AS Custom
 
 	* render a barcode and save it to a temporary file, and return its filename
 	* image file format is set as an extension
-	PROCEDURE ImageFile (InputData AS String, ImageFormat AS String, Angle AS Integer)
+	PROCEDURE ImageFile (InputData AS String, ImageFormat AS String, Angle AS Integer) AS String
 
 		SAFETHIS
 
@@ -254,6 +254,22 @@ DEFINE CLASS ZintBarcode AS Custom
 		This.SetText(m.ZB.GetText())
 
 	ENDPROC			
+
+	* check if a barcode symbology, or a feature of a barcode symbology, is supported by the library
+#IF .F.		&& Capability interrogation not available in distributed DLL
+	PROCEDURE IsSupported (Symbology AS Integer, Feature AS Integer) AS Logical
+#ELSE
+	PROCEDURE IsSupported (Symbology AS Integer) AS Logical
+#ENDIF
+		SAFETHIS
+
+		IF PCOUNT() > 1
+			RETURN ZBarcode_Cap(m.Symbology, m.Feature) == m.Feature
+		ELSE
+			RETURN ZBarcode_ValidID(m.Symbology) != 0
+		ENDIF
+
+	ENDPROC
 
 	* the SingleFile property determines if the ControlSource requires a single file (for instance, in a form)
 	* or different files (for several barcodes in a page report)
@@ -498,67 +514,67 @@ DEFINE CLASS ZintBarcode AS Custom
 	PROCEDURE GetBitmapPointer () AS Long
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 30008)
+		RETURN ReadInt(This.Symbol + 30104)
 	ENDPROC
 
 	PROCEDURE GetBitmapWidth () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 30012)
+		RETURN ReadInt(This.Symbol + 30108)
 	ENDPROC
 
 	PROCEDURE GetBitmapHeight () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 30016)
+		RETURN ReadInt(This.Symbol + 30112)
 	ENDPROC
 
 	PROCEDURE GetAlphamapPointer () AS Long
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 30020)
+		RETURN ReadInt(This.Symbol + 30116)
 	ENDPROC
 
 	PROCEDURE GetBitmapByteLength () AS Integer
 		SAFETHIS
 
-		RETURN ReadUInt(This.Symbol + 30024)
+		RETURN ReadUInt(This.Symbol + 30120)
 	ENDPROC
 
 	PROCEDURE GetDotSize () AS Float
 		SAFETHIS
 
-		RETURN ReadFloat(This.Symbol + 30028)
+		RETURN ReadFloat(This.Symbol + 30124)
 	ENDPROC
 
 	PROCEDURE GetVectorPointer () AS Long
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 30032)
+		RETURN ReadInt(This.Symbol + 30128)
 	ENDPROC
 
 	PROCEDURE GetDebug () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 30036)
+		RETURN ReadInt(This.Symbol + 30132)
 	ENDPROC
 
 	PROCEDURE SetDebug (Debug AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol + 30036, m.Debug)
+		WriteInt(This.Symbol + 30132, m.Debug)
 	ENDPROC
 
 	PROCEDURE GetWarnLevel () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 30040)
+		RETURN ReadInt(This.Symbol + 30136)
 	ENDPROC
         
 	PROCEDURE SetWarnLevel (WarnLevel AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol + 30040, m.WarnLevel)
+		WriteInt(This.Symbol + 30136, m.WarnLevel)
 	ENDPROC
 
 ENDDEFINE
@@ -801,6 +817,12 @@ DEFINE CLASS ZintLibrary AS Custom
 			LONG zint_symbol, STRING input_data, INTEGER length
 		DECLARE INTEGER ZBarcode_Print IN (m.ZintDLL) ;
 			LONG zint_symbol, INTEGER rotate_angle
+		DECLARE INTEGER ZBarcode_ValidID IN (M.ZintDLL) ;
+			LONG symbol_id
+#IF	.F.		&& Capability interrogation not available in distributed DLL
+		DECLARE INTEGER ZBarcode_Cap IN (m.ZintDLL) ;
+			LONG symbol_id, LONG cap_flag
+#ENDIF
 
 	ENDPROC
 

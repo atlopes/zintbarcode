@@ -1,11 +1,11 @@
 # zintBarcode classes
 ## Overview
 
-ZintBarcode comprises a functional class (named ZintBarcode) and two support classes (ZintLibrary and ZintEnumerations).
+**zintBarcode** comprises a functional class (named **ZintBarcode**) and two support classes (**ZintLibrary** and **ZintEnumerations**).
 
-ZintLibrary loads the required Zint and VFP2C32 libraries into VFP. It's called in the preamble code of `zintbarcode.prg`.
+**ZintLibrary** loads the required **Zint** and **VFP2C32** libraries into VFP. It's instantiated in the preamble code of `zintbarcode.prg`.
 
-ZintEnumerations holds the different enumerations used by Zint, and may be used to make the code more clear.
+**ZintEnumerations** holds the different enumerations used by **Zint**, and may be used to make the code easier to read.
 
 That is:
 
@@ -51,6 +51,12 @@ Encodes and saves a barcode to a temporary file, managed by the ZintBarcode clas
 `m.ImageFormat` is a graphic file extension (defaults to `"gif"`), and the angle can be set at 0, 90, 180, and 270 degrees.
 
 Returns a full-path filename, or an empty string in case of error (more information given by the `.GetErrorText()` method).
+
+### IsSupported (Symbology AS Integer) AS Logical
+
+Checks if a given symbology identifier is supported by the library.
+
+Returns logical.
 
 #### Reset ()
 
