@@ -4,7 +4,7 @@ ZintBarcode provides a VFP connector to the [Zint Barcode Generator](http://www.
 
 Zint is an open source project that implements 1D and 2D barcode symbologies. The VFP connector uses the `zint.dll` library to access the Zint API.
 
-Developers should refer to the Zint documentation for a presentation on the library (also in full at the [code repository](https://sourceforge.net/p/zint/code/ci/master/tree/docs/manual.txt "Full manual").
+Developers should refer to the Zint documentation for a presentation on the library (also in full at the [code repository](https://sourceforge.net/p/zint/code/ci/master/tree/docs/manual.txt "Full manual")).
 
 In particular, ZintBarcode implements the following Zint API methods:
 
@@ -14,19 +14,21 @@ In particular, ZintBarcode implements the following Zint API methods:
 | ZBarcode_Encode | Encode | Generates a barcode |
 | ZBarcode_Print | Save | Saves a generated barcode to a file |
 
+See [ZintBarcode Classes](docs/classes.md "Classes") for further documentation.
+
 ZintBarcode also implements getters and setters for all input properties of the Zint Symbol structure (and getters for the others).
 
-The Zint API is discussed in the [Section 5](http://www.zint.org.uk/Manual.aspx?type=p&page=5 "Using the API") of the manual. The settings that control the generation process are described in point 5.5.
+The Zint API is discussed in the [Section 5](http://www.zint.org.uk/Manual.aspx?type=p&page=5 "Using API") of the manual. The settings that control the generation process are described in point 5.5.
 
-A description of the available symbologies and specific settings for them are presented in [Section 6](http://www.zint.org.uk/Manual.aspx?type=p&page=6 "Using the API").
+A description of the available symbologies and specific settings for them is presented in [Section 6](http://www.zint.org.uk/Manual.aspx?type=p&page=6 "Symbologies").
 
-Additionally, ZintBarcode implements a high-level method that returns the name of a barcode image file. The name can be used as a Picture or Control Source in Report and Forms. See the demo section, below, for an example of both scenarios.
+Additionally, ZintBarcode implements a high-level method that returns the name of a barcode image file. The name can be used as a Picture or Control Source in Report and Forms. See the demo section below, for an example of both scenarios.
 
 ## Setup
 
 Zint Barcode comes as a [single program file](src/zintbarcode.prg "ZintBarcode"), but depends on the Zlib Dynamic Link Library, as well as on the VFP2C32 Fox Link Library.
 
-Both should be downloaded from their sites ([Zint](https://sourceforge.net/projects/zint/ "Zint") project; [VFP2C32](https://github.com/ChristianEhlscheid/vfp2c32 "VFP2C32") project). For convenience, a binary copy is stored in this repository.
+Both should be downloaded from their sites ([Zint](https://sourceforge.net/projects/zint/ "Zint") project; [VFP2C32](https://github.com/ChristianEhlscheid/vfp2c32 "VFP2C32") project). For convenience, binary copies are stored in this repository.
 
 Zint Barcode is implemented as a class, and to put its definition in scope the command
 
@@ -64,7 +66,7 @@ m.ZB = CREATEOBJECT("ZintBarcode")
 
 ```foxpro
 m.ZB.SetSymbology(58)
-m.ImgFilename = m.ZB.ImageFile("https://vfpx.github.io", "gif")
+m.ImgFilename = m.ZB.ImageFile("https://vfpx.github.io")
 ```
 
 **Create an image object in the VFP _Screen:**
@@ -89,7 +91,14 @@ _Screen.qr.Visible = .T.
 
 ![Code 128 Generator](docs/c128.png "A simple Code 128 generator")
 
-A simple Code 128 generator form. The barcode is regenerated as the user types new text. To run the demo:
+A simple Code 128 generator form. The barcode is regenerated as the user types new text. This is the code for the text control InteractiveChange event:
+
+```foxpro
+Thisform.Image1.Picture = Thisform.zs.ImageFile(This.Value, "gif")
+Thisform.Text2.Value = Thisform.zs.GetErrorText()
+```
+
+To run the demo:
 
 ```foxpro
 DO FORM demo\code128generator
@@ -99,13 +108,17 @@ DO FORM demo\code128generator
 
 A report of current VFPX projects. A program fetches the data from the VFPX website, including the URL of the projects, and builds a report for the resulting cursor. The URLs are represented as QR codes (their colors depending on the project status).
 
+A PRIVATE variable ZS points to a ZintBarcode object that generates the QR for each project. A Picture control source in the report is set to the method that returns the name of the image file for each project's URL.
+
+![Field report](docs/reportfield.png "Control source in a field report")
+
 To run the demo:
 
 ```foxpro
 DO demo\vfpxprojects.prg
 ```
 
-## Licensing and aknowledgements
+## Licensing and aknowledgments
 
 [Unlicensed](UNLICENSE.md "Unlicense").
 

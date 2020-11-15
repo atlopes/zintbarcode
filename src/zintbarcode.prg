@@ -170,7 +170,7 @@ DEFINE CLASS ZintBarcode AS Custom
 
 		SAFETHIS
 
-		IF PCOUNT() > 1
+		IF PCOUNT() > 1 AND !EMPTY(m.Filename)
 			This.SetOutfile(m.Filename)
 		ENDIF
 		RETURN ZBarcode_Encode(This.Symbol, m.InputData, LEN(m.InputData))
