@@ -14,9 +14,9 @@ In particular, **zintBarcode** implements the following **Zint** API methods:
 | ZBarcode_Encode | Encode | Generates a barcode |
 | ZBarcode_Print | Save | Saves a generated barcode to a file |
 
-See [zintBarcode Classes](docs/classes.md "Classes") for further documentation.
-
 **zintBarcode** also implements getters and setters for all input properties of the **Zint** Symbol structure (and getters for the others).
+
+See [zintBarcode Classes](docs/classes.md "Classes") for further documentation.
 
 The **Zint** API is discussed in the [Section 5](http://www.zint.org.uk/Manual.aspx?type=p&page=5 "Using API") of the manual. The settings that control the generation process are described in point 5.5.
 
@@ -106,7 +106,29 @@ To run the demo:
 DO FORM demo\code128generator
 ```
 
-### zintBarcode in a report
+### zintBarcode in a report a)
+
+![Northwind Catalog](docs/nw.png "Northwind Catalog")
+
+A Northwind Catalog of current products. The Id can be selected by scanning a barcode.
+
+The barcode image is set when the report cursor is populated (a field in the cursor holds the filename).
+
+```foxpro
+SELECT cpl.ProductId, ;
+		cpl.ProductName, ;
+		m.ZB.Imagefile(TRANSFORM(cpl.ProductId)) AS barcode ;
+	FROM Northwind!Current_Product_List cpl ;
+	INTO CURSOR curReport
+```
+
+To run the demo:
+
+```foxpro
+DO demo\northwindCatalog.prg
+```
+
+### zintBarcode in a report b)
 
 ![VFPX projects](docs/qr.png "VFPX projects")
 

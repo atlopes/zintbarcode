@@ -52,7 +52,7 @@ Encodes and saves a barcode to a temporary file, managed by the ZintBarcode clas
 
 Returns a full-path filename, or an empty string in case of error (more information given by the `.GetErrorText()` method).
 
-### IsSupported (Symbology AS Integer) AS Logical
+#### IsSupported (Symbology AS Integer) AS Logical
 
 Checks if a given symbology identifier is supported by the library.
 

@@ -45,6 +45,7 @@ DEFINE CLASS ZintBarcode AS Custom
 						'<memberdata name="imagefile" type="method" display="ImageFile" />' + ;
 						'<memberdata name="dynamicsettings" type="method" display="DynamicSettings" />' + ;
 						'<memberdata name="reset" type="method" display="Reset" />' + ;
+						'<memberdata name="issupported" type="method" display="IsSupported" />' + ;
 						'<memberdata name="getsinglefile" type="method" display="GetSingleFile" />' + ;
 						'<memberdata name="setsinglefile" type="method" display="SetSingleFile" />' + ;
 						'<memberdata name="getsymbology" type="method" display="GetSymbology" />' + ;
