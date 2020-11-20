@@ -30,11 +30,16 @@ The production of a barcode is a three-step process:
 
 In alphabetical order:
 
+
+----------
+
 #### Encode (InputData AS String[, Filename AS String]) AS Integer
 
 Encodes a barcode according to some data (text or binary). If a filename is given, it sets the `Outfile` Zint property.
 
 Returns an error condition (0 = no error).
+
+----------
 
 #### EncodeSave (InputData AS String[, Filename AS String[, Angle AS Integer]]) AS Integer
 
@@ -44,6 +49,8 @@ The barcode can be rotated at a given angle (at 0, 90, 180, or 270 degrees).
 
 Returns an error condition (0 = no error).
 
+----------
+
 #### ImageFile (InputData AS String[, ImageFormat AS String[, Angle AS Integer]]) AS String
 
 Encodes and saves a barcode to a temporary file, managed by the ZintBarcode class. Upon successful release of the ZintBarcode object, all temporary files are deleted.
@@ -52,15 +59,21 @@ Encodes and saves a barcode to a temporary file, managed by the ZintBarcode clas
 
 Returns a full-path filename, or an empty string in case of error (more information given by the `.GetErrorText()` method).
 
+----------
+
 #### IsSupported (Symbology AS Integer) AS Logical
 
 Checks if a given symbology identifier is supported by the library.
 
 Returns logical.
 
+----------
+
 #### Reset ()
 
 Clears and resets the Zint properties to their initial value.
+
+----------
 
 #### Save ([Angle AS Integer]) AS Integer
 
