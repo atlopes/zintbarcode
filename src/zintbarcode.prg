@@ -29,7 +29,7 @@ DEFINE CLASS ZintBarcode AS Custom
 	* manage storage
 	ADD OBJECT PROTECTED ImageFiles AS Collection
 
-	PROTECTED Symbol, TempFolder, OwnFolder, SingleFile
+	PROTECTED Symbol, TempFolder, OwnFolder, SingleFile, OverlayImage, OverlayPosition
 
 	* the address of the Zint symbol structure
 	Symbol = 0
@@ -37,6 +37,9 @@ DEFINE CLASS ZintBarcode AS Custom
 	TempFolder = ""
 	OwnFolder = .F.
 	SingleFile = .F.
+	* overlay image and position
+	OverlayImage = ""
+	OverlayPosition = "C"
 
 	_MemberData = '<VFPData>' + ;
 						'<memberdata name="encodesave" type="method" display="EncodeSave" />' + ;
@@ -48,6 +51,10 @@ DEFINE CLASS ZintBarcode AS Custom
 						'<memberdata name="issupported" type="method" display="IsSupported" />' + ;
 						'<memberdata name="getsinglefile" type="method" display="GetSingleFile" />' + ;
 						'<memberdata name="setsinglefile" type="method" display="SetSingleFile" />' + ;
+						'<memberdata name="getoverlay" type="method" display="GetOverlay" />' + ;
+						'<memberdata name="setoverlay" type="method" display="SetOverlay" />' + ;
+						'<memberdata name="getoverlayposition" type="method" display="GetOverlayPosition" />' + ;
+						'<memberdata name="setoverlayposition" type="method" display="SetOverlayPosition" />' + ;
 						'<memberdata name="getsymbology" type="method" display="GetSymbology" />' + ;
 						'<memberdata name="setsymbology" type="method" display="SetSymbology" />' + ;
 						'<memberdata name="getheight" type="method" display="GetHeight" />' + ;
@@ -162,7 +169,15 @@ DEFINE CLASS ZintBarcode AS Custom
 		IF PCOUNT() > 1
 			This.SetOutfile(m.Filename)
 		ENDIF
-		RETURN ZBarcode_Encode_And_Print(This.Symbol, m.InputData, LEN(m.InputData), EVL(m.Angle, 0))
+
+		LOCAL ZBResult AS Integer
+
+		m.ZBResult = ZBarcode_Encode_And_Print(This.Symbol, m.InputData, LEN(m.InputData), EVL(m.Angle, 0))
+		IF m.ZBResult = 0 AND !EMPTY(This.OverlayImage)
+			This.PlaceOverlayImage()
+		ENDIF
+
+		RETURN m.ZBResult
 
 	ENDPROC
 
@@ -222,6 +237,148 @@ DEFINE CLASS ZintBarcode AS Custom
 
 	ENDPROC
 
+	* places an overlay image on the image rendered at OutFile
+	HIDDEN PROCEDURE PlaceOverlayImage () AS Void
+
+		* test if GdiPluX library is available, do not proceed if not
+		IF !PEMSTATUS(_Screen, "System", 5) OR !PEMSTATUS(_Screen.System, "Drawing", 5)
+			RETURN
+		ENDIF
+
+		LOCAL RenderedBarcode AS String
+		LOCAL OutFileExtension AS String
+		LOCAL Encoder AS xfcImageFormat
+
+		* choose the format - note that not all image formats may be available
+		m.RenderedBarcode = This.GetOutfile()
+		m.OutFileExtension = UPPER(JUSTEXT(m.RenderedBarcode))
+		DO CASE
+		CASE m.OutFileExtension == "GIF"
+			m.Encoder = _Screen.System.Drawing.Imaging.ImageFormat.Gif
+		CASE m.OutFileExtension == "PNG"
+			m.Encoder = _Screen.System.Drawing.Imaging.ImageFormat.Png
+		CASE m.OutFileExtension == "BMP"
+			m.Encoder = _Screen.System.Drawing.Imaging.ImageFormat.Bmp
+		CASE m.OutFileExtension == "JPG"
+			m.Encoder = _Screen.System.Drawing.Imaging.ImageFormat.Jpeg
+		OTHERWISE
+			RETURN	&& if not supported, return the barcode without the overlaying
+		ENDCASE
+
+		* objects/attributes of the base image
+		LOCAL ImgBase AS xfcImage
+		LOCAL BaseOffsetX AS Integer
+		LOCAL BaseOffsetY AS Integer
+		LOCAL RectBase AS xfcRectangle
+
+		* objects/attributes of the overlay image
+		LOCAL ImgOverlay AS xfcImage
+		LOCAL OvrOffsetX AS Integer
+		LOCAL OvrOffsetY AS Integer
+		LOCAL RectOverlay AS xfcRectangle
+
+		* objects/attributes of the final image
+		LOCAL ImgFinal AS xfcBitmap
+		LOCAL ImgGraphic AS xfcGraphics
+		LOCAL ExtraWidth AS Integer
+		LOCAL ExtraHeight AS Integer
+		LOCAL ExtraColor AS Integer
+		LOCAL Red AS Integer
+		LOCAL Green AS Integer
+		LOCAL Blue AS Integer
+
+		* get the rendered barcode (it will be the base for the new image) and the overlay image
+		m.ImgBase = _Screen.System.Drawing.Image.FromFile(m.RenderedBarcode)
+		m.ImgOverlay = _Screen.System.Drawing.Image.Fromfile(This.OverlayImage)
+
+		* if the overlay image is not centered
+		IF !This.OverlayPosition == "C"
+
+			* the barcode width and height will increase to place the overlay in one corner
+			m.ExtraHeight = INT(m.ImgOverlay.Height / 2)
+			m.ExtraWidth = INT(m.ImgOverlay.Width / 2)
+
+			* depending on the corner on which the overlay will be placed,
+			* the offset position of both the base image and the overlay image
+			* may require to be set
+			DO CASE
+			CASE This.OverlayPosition == "TL"		&& top left
+				* overlay
+				*   base
+				m.OvrOffsetX = 0
+				m.OvrOffsetY = 0
+				m.BaseOffsetX = m.ExtraWidth
+				m.BaseOffsetY = m.ExtraHeight
+
+			CASE This.OverlayPosition == "TR"		&& top right
+				*   overlay
+				* base
+				m.OvrOffsetX = m.ImgBase.Width - m.ExtraWidth
+				m.OvrOffsetY = 0
+				m.BaseOffsetX = 0
+				m.BaseOffsetY = m.ExtraHeight
+
+			CASE This.OverlayPosition == "BL"		&& bottom left
+				*   base
+				* overlay
+				m.OvrOffsetX = 0
+				m.OvrOffsetY = m.ImgBase.Height - m.ExtraHeight
+				m.BaseOffsetX = m.ExtraWidth
+				m.BaseOffsetY = 0
+
+			CASE This.OverlayPosition == "BR"		&& bottom right
+				* base
+				*   overlay
+				m.OvrOffsetX = m.ImgBase.Width - m.ExtraWidth
+				m.OvrOffsetY = m.ImgBase.Height - m.ExtraHeight
+				m.BaseOffsetX = 0
+				m.BaseOffsetY = 0
+
+			OTHERWISE
+
+				RETURN		&& placement not recognized, no changes to the rendered barcode
+
+			ENDCASE
+
+		ELSE
+
+			m.BaseOffsetX = 0
+			m.BaseOffsetY = 0
+			m.ExtraHeight = 0
+			m.ExtraWidth = 0
+
+			* if centered, the rendered barcode dimension will not change
+			* and the overlay will move to the center
+			m.OvrOffsetX = INT(m.ImgBase.Width / 2) - INT(m.ImgOverlay.Width / 2)
+			m.OvrOffsetY = INT(m.ImgBase.Height / 2) - INT(m.ImgOverlay.Height / 2)
+
+		ENDIF
+
+		* the new final image size
+		m.ImgFinal = _Screen.System.Drawing.Bitmap.New(m.ImgBase.Width + m.ExtraWidth, m.ImgBase.Height + m.ExtraHeight)
+
+		* prepare an extended graphic canvas
+		m.ImgGraphic = _Screen.System.Drawing.Graphics.FromImage(m.ImgFinal)
+		m.ExtraColor = This.GetBGColour()
+		m.Red = BITAND(m.ExtraColor, 0x0FF)
+		m.Green = BITRSHIFT(BITAND(m.ExtraColor, 0x0FF00), 8)
+		m.Blue = BITRSHIFT(BITAND(m.ExtraColor, 0x0FF0000), 16)
+		m.ImgGraphic.Clear(_Screen.System.Drawing.Color.FromRGB(m.Red, m.Green, m.Blue))
+
+		* place the base image at its calculated offset
+		m.RectBase = _Screen.System.Drawing.Rectangle.New(m.BaseOffsetX, m.BaseOffsetY, m.ImgBase.Width, m.ImgBase.Height)
+		m.ImgGraphic.DrawImage(m.ImgBase, m.RectBase)
+
+		* place the overlay image at its calculated offset
+		m.RectOverlay = _Screen.System.Drawing.Rectangle.New(m.OvrOffsetX, m.OvrOffsetY, m.ImgOverlay.Width, m.ImgOverlay.Height)
+		m.ImgGraphic.DrawImage(m.ImgOverlay, m.RectOverlay)
+
+		* overwrite the output file with the new overlayed image, and done
+		m.ImgBase = .NULL.
+		m.ImgFinal.Save(m.RenderedBarcode, m.Encoder)
+
+	ENDFUNC
+
 	* a placeholder for dynamic settings (subclass ZintBarcode to use this feature)
 	PROCEDURE DynamicSettings (InputData AS String)
 	ENDPROC
@@ -264,11 +421,15 @@ DEFINE CLASS ZintBarcode AS Custom
 #ENDIF
 		SAFETHIS
 
+#IF .F.
 		IF PCOUNT() > 1
 			RETURN ZBarcode_Cap(m.Symbology, m.Feature) == m.Feature
 		ELSE
+#ENDIF
 			RETURN ZBarcode_ValidID(m.Symbology) != 0
+#IF .F.
 		ENDIF
+#ENDIF
 
 	ENDPROC
 
@@ -282,6 +443,28 @@ DEFINE CLASS ZintBarcode AS Custom
 
 	PROCEDURE SetSingleFile (SingleFile AS Logical)
 		This.SingleFile = m.SingleFile
+	ENDPROC
+
+	* an overlay image may be placed over the resulting barcode at the center or at one of the barcode corners
+	PROCEDURE GetOverlay () AS String
+		SAFETHIS
+
+		RETURN This.OverlayImage
+	ENDPROC
+
+	PROCEDURE SetOverlay (ImageFile AS String)
+		This.OverlayImage = m.ImageFile
+	ENDPROC
+
+	PROCEDURE GetOverlayPosition () AS String
+		SAFETHIS
+
+		RETURN This.OverlayPosition
+	ENDPROC
+
+	* overlay positions: C, TL, TR, BL, BR
+	PROCEDURE SetOverlayPosition (OverlayPosition AS String)
+		This.OverlayPosition = UPPER(m.OverlayPosition)
 	ENDPROC
 
 	* getters and setters of the Zint properties

@@ -85,7 +85,7 @@ Returns an error condition (0 = no error).
 
 ### Configuration methods
 
-In alphabetical order. All properties have a Get method (for instance, `GetWhitespaceWidth()`). The input properties also have Set methods (for instance, `SetOption()`).
+In alphabetical order. All properties have a Get method (for instance, `GetWhitespaceWidth()`). The input properties also have Set methods (for instance, `SetOption()`). Additional properties - that is, not Zint properties - are italicized.
 
 All Set methods have a single parameter of the indicated type, except the `SetOption()` method.
 
@@ -110,11 +110,13 @@ All Set methods have a single parameter of the indicated type, except the `SetOp
 | Option | • | • | I | Index of option (1-3) is indicated in the first parameter. |
 | OutputOptions | • | • | I |  |
 | Outfile | • | • | C | Max. 254 length. |
+| *Overlay* | • | • | C | Overlay image (filename). |
+| *OverlayPosition* | • | • | C | Position of the overlay image: C, TL, TR, BL, BR (Center, Top, Bottom, Right, Left). |
 | Primary |  | • | C |  |
 | RowHeight |  | • | C | A binary string. |
 | Rows |  | • | I |  |
 | Scale | • | • | N |  |
-| SingleFile | • | • | L | Not a Zint property. Used to indicate if a single temporary file is sufficient to store the barcodes required by the application. |
+| *SingleFile* | • | • | L | Used to indicate if a single temporary file is sufficient to store the barcodes required by the application. |
 | ShowHumanReadableText | • | • | L |  |
 | Symbology | • | • | I |  |
 | Text | • | • | C | The class encodes the text as UTF-8. Max. 127 length (after encoding).  |

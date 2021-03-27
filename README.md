@@ -30,6 +30,8 @@ Additionally, **zintBarcode** implements a high-level method that returns the na
 
 Both should be downloaded from their sites ([**Zint**](https://sourceforge.net/projects/zint/ "Zint") project; [**VFP2C32**](https://github.com/ChristianEhlscheid/vfp2c32 "VFP2C32") project). For convenience, binary copies of both libraries are stored in this repository.
 
+To overlay an image on the barcode, the [**GdiPluX**](https://github.com/VFPX/GDIPlusX "GdiPlusX") library must be present in the application environment.
+
 **zintBarcode** is implemented as a class, and to put its definition in scope the command
 
 ```foxpro
@@ -151,6 +153,8 @@ DO demo\vfpxprojects.prg
 **Zint** is Copyright © 2020 Robin Stuart, distributed under a BSD license.
 
 **VFP2C32** by Christian Ehlscheid with collaboration of Eric Selje.
+
+**GdiPlusX** by Bernard Bout (*project manager*) et al.
 
 ## Status
 
