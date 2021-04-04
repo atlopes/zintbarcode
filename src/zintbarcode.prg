@@ -173,7 +173,7 @@ DEFINE CLASS ZintBarcode AS Custom
 		LOCAL ZBResult AS Integer
 
 		m.ZBResult = ZBarcode_Encode_And_Print(This.Symbol, m.InputData, LEN(m.InputData), EVL(m.Angle, 0))
-		IF m.ZBResult = 0 AND !EMPTY(This.OverlayImage)
+		IF m.ZBResult = 0 AND IIF(VARTYPE(This.OverlayImage) == "C", !EMPTY(This.OverlayImage), !ISNULL(This.OverlayImage))
 			This.PlaceOverlayImage()
 		ENDIF
 
@@ -289,7 +289,14 @@ DEFINE CLASS ZintBarcode AS Custom
 
 		* get the rendered barcode (it will be the base for the new image) and the overlay image
 		m.ImgBase = _Screen.System.Drawing.Image.FromFile(m.RenderedBarcode)
-		m.ImgOverlay = _Screen.System.Drawing.Image.Fromfile(This.OverlayImage)
+		DO CASE
+		CASE VARTYPE(This.OverlayImage) == "C"
+			m.ImgOverlay = _Screen.System.Drawing.Image.FromFile(This.OverlayImage)
+		CASE !EMPTY(This.OverlayImage.PictureVal)
+			m.ImgOverlay = _Screen.System.Drawing.Image.FromVarbinary(This.OverlayImage.PictureVal)
+		OTHERWISE
+			m.ImgOverlay = _Screen.System.Drawing.Image.FromFile(This.OverlayImage.Picture)
+		ENDCASE
 
 		* if the overlay image is not centered
 		IF !This.OverlayPosition == "C"

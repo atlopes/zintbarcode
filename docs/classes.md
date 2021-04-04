@@ -110,7 +110,7 @@ All Set methods have a single parameter of the indicated type, except the `SetOp
 | Option | • | • | I | Index of option (1-3) is indicated in the first parameter. |
 | OutputOptions | • | • | I |  |
 | Outfile | • | • | C | Max. 254 length. |
-| *Overlay* | • | • | C | Overlay image (filename). |
+| *Overlay* | • | • | C/O | Overlay image. A filename, or an Image object. |
 | *OverlayPosition* | • | • | C | Position of the overlay image: C, TL, TR, BL, BR (Center, Top, Bottom, Right, Left). |
 | Primary |  | • | C |  |
 | RowHeight |  | • | C | A binary string. |
