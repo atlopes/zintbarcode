@@ -111,7 +111,11 @@ All Set methods have a single parameter of the indicated type, except the `SetOp
 | OutputOptions | • | • | I |  |
 | Outfile | • | • | C | Max. 254 length. |
 | *Overlay* | • | • | C/O | Overlay image. A filename, or an Image object. |
+| *OverlayHeight* | • | • | I | In pixels. When the height and the width of an overlay area are set, the overlay image is resized to fit. |
+| *OverlayIsometric* | • | • | L | When `.T.`, a resized overlay image retains its proportions. Otherwise, the image resizes to the overlay width and height. |
+| *OverlayMargin* | • | • | I | Margin around an overlay image. Only for a resized overlay image. |
 | *OverlayPosition* | • | • | C | Position of the overlay image: C, TL, TR, BL, BR (Center, Top, Bottom, Right, Left). |
+| *OverlayWidth* | • | • | I | In pixels. When the width and the height of an overlay area are set, the overlay image is resized to fit. |
 | Primary |  | • | C |  |
 | RowHeight |  | • | C | A binary string. |
 | Rows |  | • | I |  |

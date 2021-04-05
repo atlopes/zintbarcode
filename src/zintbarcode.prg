@@ -29,7 +29,8 @@ DEFINE CLASS ZintBarcode AS Custom
 	* manage storage
 	ADD OBJECT PROTECTED ImageFiles AS Collection
 
-	PROTECTED Symbol, TempFolder, OwnFolder, SingleFile, OverlayImage, OverlayPosition
+	PROTECTED Symbol, TempFolder, OwnFolder, SingleFile
+	PROTECTED OverlayImage, OverlayPosition, OverlayWidth, OverlayHeight, OverlayMargin, OverlayIsometric
 
 	* the address of the Zint symbol structure
 	Symbol = 0
@@ -40,6 +41,10 @@ DEFINE CLASS ZintBarcode AS Custom
 	* overlay image and position
 	OverlayImage = ""
 	OverlayPosition = "C"
+	OverlayWidth = 0
+	OverlayHeight = 0
+	OverlayMargin = 0
+	OverlayIsometric = .T.
 
 	_MemberData = '<VFPData>' + ;
 						'<memberdata name="encodesave" type="method" display="EncodeSave" />' + ;
@@ -55,6 +60,14 @@ DEFINE CLASS ZintBarcode AS Custom
 						'<memberdata name="setoverlay" type="method" display="SetOverlay" />' + ;
 						'<memberdata name="getoverlayposition" type="method" display="GetOverlayPosition" />' + ;
 						'<memberdata name="setoverlayposition" type="method" display="SetOverlayPosition" />' + ;
+						'<memberdata name="getoverlaywidth" type="method" display="GetOverlayWidth" />' + ;
+						'<memberdata name="setoverlaywidth" type="method" display="SetOverlayWidth" />' + ;
+						'<memberdata name="getoverlayheight" type="method" display="GetOverlayHeight" />' + ;
+						'<memberdata name="setoverlayheight" type="method" display="SetOverlayHeight" />' + ;
+						'<memberdata name="getoverlaymargin" type="method" display="GetOverlayMargin" />' + ;
+						'<memberdata name="setoverlaymargin" type="method" display="SetOverlayMargin" />' + ;
+						'<memberdata name="getoverlayisometric" type="method" display="GetOverlayIsometric" />' + ;
+						'<memberdata name="setoverlayisometric" type="method" display="SetOverlayIsometric" />' + ;
 						'<memberdata name="getsymbology" type="method" display="GetSymbology" />' + ;
 						'<memberdata name="setsymbology" type="method" display="SetSymbology" />' + ;
 						'<memberdata name="getheight" type="method" display="GetHeight" />' + ;
@@ -240,7 +253,7 @@ DEFINE CLASS ZintBarcode AS Custom
 	* places an overlay image on the image rendered at OutFile
 	HIDDEN PROCEDURE PlaceOverlayImage () AS Void
 
-		* test if GdiPluX library is available, do not proceed if not
+		* test if GdiPlusX library is available, do not proceed if not
 		IF !PEMSTATUS(_Screen, "System", 5) OR !PEMSTATUS(_Screen.System, "Drawing", 5)
 			RETURN
 		ENDIF
@@ -275,11 +288,20 @@ DEFINE CLASS ZintBarcode AS Custom
 		LOCAL ImgOverlay AS xfcImage
 		LOCAL OvrOffsetX AS Integer
 		LOCAL OvrOffsetY AS Integer
+		LOCAL OvrWidth AS Integer
+		LOCAL OvrHeight AS Integer
+		LOCAL OvrBox AS Logical
 		LOCAL RectOverlay AS xfcRectangle
+		LOCAL ResizeFactor AS Double
+		LOCAL ResizeFactorX AS Double
+		LOCAL ResizeFactorY AS Double
+		LOCAL ResizeOffsetX AS Integer
+		LOCAL ResizeOffsetY AS Integer
 
 		* objects/attributes of the final image
 		LOCAL ImgFinal AS xfcBitmap
 		LOCAL ImgGraphic AS xfcGraphics
+		LOCAL ImgColor AS xfcColor
 		LOCAL ExtraWidth AS Integer
 		LOCAL ExtraHeight AS Integer
 		LOCAL ExtraColor AS Integer
@@ -298,12 +320,23 @@ DEFINE CLASS ZintBarcode AS Custom
 			m.ImgOverlay = _Screen.System.Drawing.Image.FromFile(This.OverlayImage.Picture)
 		ENDCASE
 
+		* overlay image may be inserted inside a box
+		IF EMPTY(This.OverlayWidth) AND EMPTY(This.OverlayHeight)
+			m.OvrBox = .F.
+			m.OvrHeight = m.ImgOverlay.Height
+			m.OvrWidth = m.ImgOverlay.Width
+		ELSE
+			m.OvrBox = .T.
+			m.OvrHeight = This.OverlayHeight
+			m.OvrWidth = This.OverlayWidth
+		ENDIF
+
 		* if the overlay image is not centered
 		IF !This.OverlayPosition == "C"
 
 			* the barcode width and height will increase to place the overlay in one corner
-			m.ExtraHeight = INT(m.ImgOverlay.Height / 2)
-			m.ExtraWidth = INT(m.ImgOverlay.Width / 2)
+			m.ExtraHeight = INT(m.OvrHeight / 2)
+			m.ExtraWidth = INT(m.OvrWidth / 2)
 
 			* depending on the corner on which the overlay will be placed,
 			* the offset position of both the base image and the overlay image
@@ -356,8 +389,8 @@ DEFINE CLASS ZintBarcode AS Custom
 
 			* if centered, the rendered barcode dimension will not change
 			* and the overlay will move to the center
-			m.OvrOffsetX = INT(m.ImgBase.Width / 2) - INT(m.ImgOverlay.Width / 2)
-			m.OvrOffsetY = INT(m.ImgBase.Height / 2) - INT(m.ImgOverlay.Height / 2)
+			m.OvrOffsetX = INT(m.ImgBase.Width / 2) - INT(m.OvrWidth / 2)
+			m.OvrOffsetY = INT(m.ImgBase.Height / 2) - INT(m.OvrHeight / 2)
 
 		ENDIF
 
@@ -370,15 +403,54 @@ DEFINE CLASS ZintBarcode AS Custom
 		m.Red = BITAND(m.ExtraColor, 0x0FF)
 		m.Green = BITRSHIFT(BITAND(m.ExtraColor, 0x0FF00), 8)
 		m.Blue = BITRSHIFT(BITAND(m.ExtraColor, 0x0FF0000), 16)
-		m.ImgGraphic.Clear(_Screen.System.Drawing.Color.FromRGB(m.Red, m.Green, m.Blue))
+		m.ImgColor = _Screen.System.Drawing.Color.FromRGB(m.Red, m.Green, m.Blue)
+		m.ImgGraphic.Clear(m.ImgColor)
 
 		* place the base image at its calculated offset
 		m.RectBase = _Screen.System.Drawing.Rectangle.New(m.BaseOffsetX, m.BaseOffsetY, m.ImgBase.Width, m.ImgBase.Height)
 		m.ImgGraphic.DrawImage(m.ImgBase, m.RectBase)
 
 		* place the overlay image at its calculated offset
-		m.RectOverlay = _Screen.System.Drawing.Rectangle.New(m.OvrOffsetX, m.OvrOffsetY, m.ImgOverlay.Width, m.ImgOverlay.Height)
-		m.ImgGraphic.DrawImage(m.ImgOverlay, m.RectOverlay)
+		IF !m.OvrBox
+			m.RectOverlay = _Screen.System.Drawing.Rectangle.New(m.OvrOffsetX, m.OvrOffsetY, m.OvrWidth, m.OvrHeight)
+			m.ImgGraphic.DrawImage(m.ImgOverlay, m.RectOverlay)
+		ELSE
+
+			* in a box, start by clearing it
+			m.ImgGraphic.FillRectangle(_Screen.System.Drawing.SolidBrush.New(m.ImgColor), m.OvrOffsetX, m.OvrOffsetY, m.OvrWidth, m.OvrHeight)
+
+			* if needed, make room for a margin
+			m.OvrOffsetX = m.OvrOffsetX + This.OverlayMargin
+			m.OvrOffsetY = m.OvrOffsetY + This.OverlayMargin
+			m.OvrWidth = m.OvrWidth - This.OverlayMargin * 2
+			m.OvrHeight = m.OvrHeight - This.OverlayMargin * 2
+
+			* redimension the image while retaining proportions, if isometric
+			IF This.OverlayIsometric
+				* the target dimensions
+				m.ResizeOffsetX = m.OvrWidth
+				m.ResizeOffsetY = m.OvrHeight
+				* get the dominant resizing factor (width or height)
+				m.ResizeFactorX = m.OvrWidth / m.ImgOverlay.Width
+				m.ResizeFactorY = m.OvrHeight / m.ImgOverlay.Height
+				m.ResizeFactor = MIN(m.ResizeFactorX, m.ResizeFactorY)
+				* new dimensions
+				m.OvrHeight =  m.ImgOverlay.Height * m.ResizeFactor
+				m.OvrWidth = m.ImgOverlay.Width * m.ResizeFactor
+				* and adjust to the new empty space, if any
+				m.OvrOffsetX = m.OvrOffsetX + (m.ResizeOffsetX - m.OvrWidth) / 2
+				m.OvrOffsetY = m.OvrOffsetY + (m.ResizeOffsetY - m.OvrHeight) / 2 
+			ENDIF
+
+			* resize the image with the best quality possible
+			m.RectOverlay = _Screen.System.Drawing.Rectangle.New(m.OvrOffsetX, m.OvrOffsetY, m.OvrWidth, m.OvrHeight)
+			m.ImgGraphic.SmoothingMode = _Screen.System.Drawing.Drawing2d.SmoothingMode.Highquality
+			m.ImgGraphic.InterpolationMode = _Screen.System.Drawing.Drawing2d.Interpolationmode.Highqualitybicubic
+
+			* draw it
+			m.ImgGraphic.DrawImage(m.ImgOverlay, m.RectOverlay)
+
+		ENDIF
 
 		* overwrite the output file with the new overlayed image, and done
 		m.ImgBase = .NULL.
@@ -453,25 +525,67 @@ DEFINE CLASS ZintBarcode AS Custom
 	ENDPROC
 
 	* an overlay image may be placed over the resulting barcode at the center or at one of the barcode corners
-	PROCEDURE GetOverlay () AS String
+	PROCEDURE GetOverlay () AS StringOrImage
 		SAFETHIS
 
 		RETURN This.OverlayImage
 	ENDPROC
 
-	PROCEDURE SetOverlay (ImageFile AS String)
+	PROCEDURE SetOverlay (ImageFile AS StringOrImage)
 		This.OverlayImage = m.ImageFile
 	ENDPROC
 
+	* overlay positions: C, TL, TR, BL, BR
 	PROCEDURE GetOverlayPosition () AS String
 		SAFETHIS
 
 		RETURN This.OverlayPosition
 	ENDPROC
 
-	* overlay positions: C, TL, TR, BL, BR
 	PROCEDURE SetOverlayPosition (OverlayPosition AS String)
 		This.OverlayPosition = UPPER(m.OverlayPosition)
+	ENDPROC
+
+	* overlay width, height, and margin
+	PROCEDURE GetOverlayWidth () AS Integer
+		SAFETHIS
+
+		RETURN This.OverlayWidth
+	ENDPROC
+
+	PROCEDURE SetOverlayWidth (OverlayWidth AS Integer)
+		This.OverlayWidth = m.OverlayWidth
+	ENDPROC
+
+	PROCEDURE GetOverlayHeight () AS Integer
+		SAFETHIS
+
+		RETURN This.OverlayHeight
+	ENDPROC
+
+	PROCEDURE SetOverlayHeight (OverlayHeight AS Integer)
+		This.OverlayHeight = m.OverlayHeight
+	ENDPROC
+
+	PROCEDURE GetOverlayMargin() AS Integer
+		SAFETHIS
+
+		RETURN This.OverlayMargin
+	ENDPROC
+
+	PROCEDURE SetOverlayMargin (OverlayMargin AS Integer)
+		This.OverlayMargin = m.OverlayMargin
+	ENDPROC
+
+	* overlay isometric?
+	PROCEDURE GetOverlayIsometric() AS Logical
+		SAFETHIS
+
+		RETURN This.OverlayIsometric
+	ENDPROC
+
+	PROCEDURE SetOverlayIsometric (OverlayIsometric AS Logical)
+		This.OverlayIsometric = m.OverlayIsometric
 	ENDPROC
 
 	* getters and setters of the Zint properties
