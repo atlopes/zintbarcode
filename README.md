@@ -146,6 +146,56 @@ To run the demo:
 DO demo\vfpxprojects.prg
 ```
 
+### Barcodes with overlay images
+
+Images can be placed over barcodes of any symbology. Since the readability of the barcode may be seriously affected, comprehensive testing is highly recommended.
+
+Overlay images may be used to add a logo to a barcode, or to comply with a requirement imposed by an organization.
+
+Overlay images may be dropped on a barcode as they are, or resized to fit a specific width and height.
+
+In the demo, a report on the sessions of the May'21 Virtual Fox Fest produces QR codes with links to the sessions. Each QR code includes a photo of the speaker at its center.
+
+The code section that controls the overlay image:
+
+```foxpro
+* use a VFP image as the overlay image
+m.ZB.SetOverlay(m.ZB.Photo)
+* the size
+m.ZB.SetOverlayWidth(34)	&& 30x39, 4 pixels for the margin
+m.ZB.SetOverlayHeight(43)
+* and a margin
+m.ZB.SetOverlayMargin(2)
+* isometric resizing (it's the default, anyway)
+m.ZB.SetOverlayIsometric(.T.)
+* and placed at the center (also the default)
+m.ZB.SetOverlayPosition("C")
+
+* the subclassing of ZintBarcode
+DEFINE CLASS ZintBarcodeExtended AS ZintBarcode
+
+	ADD OBJECT Photo AS Image
+
+	PROCEDURE DynamicSettings (InputData AS String)
+
+		This.Photo.PictureVal = curVFFSessions.photo   && a blob in a cursor
+
+	ENDPROC
+
+ENDDEFINE
+```
+
+The report:
+
+![VFPX projects](docs/vffsessions.png "Virtual Fox Fest Sessions")
+
+To run the demo:
+
+```foxpro
+DO demo\virtualfoxfest.prg
+```
+
+
 ## Licensing and acknowledgments
 
 [Unlicensed](UNLICENSE.md "Unlicense").

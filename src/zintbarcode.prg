@@ -304,10 +304,6 @@ DEFINE CLASS ZintBarcode AS Custom
 		LOCAL ImgColor AS xfcColor
 		LOCAL ExtraWidth AS Integer
 		LOCAL ExtraHeight AS Integer
-		LOCAL ExtraColor AS Integer
-		LOCAL Red AS Integer
-		LOCAL Green AS Integer
-		LOCAL Blue AS Integer
 
 		* get the rendered barcode (it will be the base for the new image) and the overlay image
 		m.ImgBase = _Screen.System.Drawing.Image.FromFile(m.RenderedBarcode)
@@ -399,11 +395,7 @@ DEFINE CLASS ZintBarcode AS Custom
 
 		* prepare an extended graphic canvas
 		m.ImgGraphic = _Screen.System.Drawing.Graphics.FromImage(m.ImgFinal)
-		m.ExtraColor = This.GetBGColour()
-		m.Red = BITAND(m.ExtraColor, 0x0FF)
-		m.Green = BITRSHIFT(BITAND(m.ExtraColor, 0x0FF00), 8)
-		m.Blue = BITRSHIFT(BITAND(m.ExtraColor, 0x0FF0000), 16)
-		m.ImgColor = _Screen.System.Drawing.Color.FromRGB(m.Red, m.Green, m.Blue)
+		m.ImgColor = _Screen.System.Drawing.Color.FromRGB(This.GetBGColour())
 		m.ImgGraphic.Clear(m.ImgColor)
 
 		* place the base image at its calculated offset
