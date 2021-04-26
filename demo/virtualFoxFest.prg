@@ -67,11 +67,14 @@ m.ZB.SetSymbology(m.ZE.Barcode_qrcode)
 m.ZB.SetOption(1, 2)
 m.ZB.SetOption(2, 10)
 
+* create a bigger QR code to overlay better resolution images
+m.ZB.SetScale(2.0)
+
 * use a VFP image as the overlay image
 m.ZB.SetOverlay(m.ZB.Photo)
 * the size
-m.ZB.SetOverlayWidth(34)	&& 30x39, 4 pixels for the margin
-m.ZB.SetOverlayHeight(43)
+m.ZB.SetOverlayWidth(64)	&& 60x78, 4 pixels for the margin
+m.ZB.SetOverlayHeight(82)
 * and a margin
 m.ZB.SetOverlayMargin(2)
 * isometric resizing (it's the default, anyway)
