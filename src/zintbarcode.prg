@@ -74,6 +74,8 @@ DEFINE CLASS ZintBarcode AS Custom
 						'<memberdata name="setheight" type="method" display="SetHeight" />' + ;
 						'<memberdata name="getwhitespacewidth" type="method" display="GetWhitespaceWidth" />' + ;
 						'<memberdata name="setwhitespacewidth" type="method" display="SetWhitespaceWidth" />' + ;
+						'<memberdata name="getwhitespaceheight" type="method" display="GetWhitespaceHeight" />' + ;
+						'<memberdata name="setwhitespaceheight" type="method" display="SetWhitespaceHeight" />' + ;
 						'<memberdata name="getborderwidth" type="method" display="GetBorderWidth" />' + ;
 						'<memberdata name="setborderwidth" type="method" display="SetBorderWidth" />' + ;
 						'<memberdata name="getoutputoptions" type="method" display="GetOutputOptions" />' + ;
@@ -240,7 +242,7 @@ DEFINE CLASS ZintBarcode AS Custom
 		* have other settings dynamically prepared
 		This.DynamicSettings(m.InputData)
 
-		IF This.EncodeSave(m.InputData, m.Filename, m.Angle) = 0
+		IF This.EncodeSave(m.InputData, m.Filename, m.Angle) == 0
 			RETURN m.Filename
 			* the filename can be used as a ControlSource or Picture in controls
 		ELSE
@@ -315,6 +317,11 @@ DEFINE CLASS ZintBarcode AS Custom
 		OTHERWISE
 			m.ImgOverlay = _Screen.System.Drawing.Image.FromFile(This.OverlayImage.Picture)
 		ENDCASE
+
+		* forget about overlaying if the overlay image can not be loaded into an object
+		IF ISNULL(m.ImgOverlay)
+			RETURN
+		ENDIF
 
 		* overlay image may be inserted inside a box
 		IF EMPTY(This.OverlayWidth) AND EMPTY(This.OverlayHeight)
@@ -468,6 +475,7 @@ DEFINE CLASS ZintBarcode AS Custom
 		This.SetSymbology(m.ZB.GetSymbology())
 		This.SetHeight(m.ZB.GetHeight())
 		This.SetWhitespaceWidth(m.ZB.GetWhitespaceWidth())
+		This.SetWhitespaceHeight(m.ZB.GetWhitespaceHeight())
 		This.SetBorderWidth(m.ZB.GetBorderWidth())
 		This.SetOutputOptions(m.ZB.GetOutputOptions())
 		This.SetFGColour(m.ZB.GetFGColour())
@@ -485,22 +493,15 @@ DEFINE CLASS ZintBarcode AS Custom
 	ENDPROC			
 
 	* check if a barcode symbology, or a feature of a barcode symbology, is supported by the library
-#IF .F.		&& Capability interrogation not available in distributed DLL
 	PROCEDURE IsSupported (Symbology AS Integer, Feature AS Integer) AS Logical
-#ELSE
-	PROCEDURE IsSupported (Symbology AS Integer) AS Logical
-#ENDIF
+
 		SAFETHIS
 
-#IF .F.
 		IF PCOUNT() > 1
 			RETURN ZBarcode_Cap(m.Symbology, m.Feature) == m.Feature
 		ELSE
-#ENDIF
 			RETURN ZBarcode_ValidID(m.Symbology) != 0
-#IF .F.
 		ENDIF
-#ENDIF
 
 	ENDPROC
 
@@ -581,9 +582,10 @@ DEFINE CLASS ZintBarcode AS Custom
 	ENDPROC
 
 	* getters and setters of the Zint properties
-	* check Zint documentation, mainly at http://www.zint.org.uk/Manual.aspx?type=p&page=5 (in particular 5.5)
-	* and http://www.zint.org.uk/Manual.aspx?type=p&page=6
+	* check Zint documentation, mainly at https://www.zint.org.uk/manual-05.php (in particular 5.6)
+	* and https://www.zint.org.uk/manual-06-01.php
 
+	**** Symbology [int32@0]
 	PROCEDURE GetSymbology () AS Integer
 		SAFETHIS
 
@@ -596,18 +598,20 @@ DEFINE CLASS ZintBarcode AS Custom
 		WriteInt(This.Symbol, m.Symbology)
 	ENDPROC
 
-	PROCEDURE GetHeight () AS Integer
+	**** Height [float@4]
+	PROCEDURE GetHeight () AS Float
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 4)
+		RETURN ReadFloat(This.Symbol + 4)
 	ENDPROC
 
-	PROCEDURE SetHeight (Height AS Integer)
+	PROCEDURE SetHeight (Height AS Float)
 		SAFETHIS
 
-		WriteInt(This.Symbol + 4, m.Height)
+		WriteFloat(This.Symbol + 4, m.Height)
 	ENDPROC
 
+	**** Whitespace Width [int32@8]
 	PROCEDURE GetWhitespaceWidth () AS Integer
 		SAFETHIS
 
@@ -620,61 +624,80 @@ DEFINE CLASS ZintBarcode AS Custom
 		WriteInt(This.Symbol + 8, m.WhitespaceWidth)
 	ENDPROC
 
-	PROCEDURE GetBorderWidth () AS Integer
+	**** Whitespace Height [int32@12]
+	PROCEDURE GetWhitespaceHeight () AS Integer
 		SAFETHIS
 
 		RETURN ReadInt(This.Symbol + 12)
 	ENDPROC
 
-	PROCEDURE SetBorderWidth (BorderWidth AS Integer)
+	PROCEDURE SetWhitespaceHeight (WhitespaceHeight AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol + 12, m.BorderWidth)
+		WriteInt(This.Symbol + 12, m.WhitespaceHeight)
 	ENDPROC
 
-	PROCEDURE GetOutputOptions () AS Integer
+	**** Border Width [int32@16]
+	PROCEDURE GetBorderWidth () AS Integer
 		SAFETHIS
 
 		RETURN ReadInt(This.Symbol + 16)
 	ENDPROC
 
+	PROCEDURE SetBorderWidth (BorderWidth AS Integer)
+		SAFETHIS
+
+		WriteInt(This.Symbol + 16, m.BorderWidth)
+	ENDPROC
+
+	**** Output Options [int32@20]
+	PROCEDURE GetOutputOptions () AS Integer
+		SAFETHIS
+
+		RETURN ReadInt(This.Symbol + 20)
+	ENDPROC
+
 	PROCEDURE SetOutputOptions (OutputOptions AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol + 16, m.OutputOptions)
+		WriteInt(This.Symbol + 20, m.OutputOptions)
 	ENDPROC
 
 	* colors are translated back and forth to VFP's RGB() colors
+
+	*** Foreground Colour [string@24]
 	PROCEDURE GetFGColour () AS Integer
 		SAFETHIS
 
 		LOCAL HexString AS String
 
-		m.HexString = PADR(ReadCString(This.Symbol + 20), 6, "0")
+		m.HexString = PADR(ReadCString(This.Symbol + 24), 6, "0")
 		RETURN EVALUATE("0x" + RIGHT(m.HexString, 2) + SUBSTR(m.HexString, 3, 2) + LEFT(m.HexString, 2))
 	ENDPROC
 
 	PROCEDURE SetFGColour (FGColour AS Integer)
 		SAFETHIS
 
-		WriteCharArray(This.Symbol + 20, SUBSTR(TRANSFORM(CTOBIN(BINTOC(m.FGColour, "S"), "4RS"), "@0"), 3, 6) + CHR(0))
+		WriteCharArray(This.Symbol + 24, SUBSTR(TRANSFORM(CTOBIN(BINTOC(m.FGColour, "S"), "4RS"), "@0"), 3, 6) + CHR(0))
 	ENDPROC
 
+	*** Background Colour [string@34]
 	PROCEDURE GetBGColour () AS Integer
 		SAFETHIS
 
 		LOCAL HexString AS String
 
-		m.HexString = PADR(ReadCString(This.Symbol + 36), 6, "0")
+		m.HexString = PADR(ReadCString(This.Symbol + 34), 6, "0")
 		RETURN EVALUATE("0x" + RIGHT(m.HexString, 2) + SUBSTR(m.HexString, 3, 2) + LEFT(m.HexString, 2))
 	ENDPROC
 
 	PROCEDURE SetBGColour (BGColour AS Integer)
 		SAFETHIS
 
-		WriteCharArray(This.Symbol + 36, SUBSTR(TRANSFORM(CTOBIN(BINTOC(m.BGColour, "S"), "4RS"), "@0"), 3, 6) + CHR(0))
+		WriteCharArray(This.Symbol + 34, SUBSTR(TRANSFORM(CTOBIN(BINTOC(m.BGColour, "S"), "4RS"), "@0"), 3, 6) + CHR(0))
 	ENDPROC
 
+	**** Out File [string@52]
 	PROCEDURE GetOutfile () AS String
 		SAFETHIS
 
@@ -687,6 +710,7 @@ DEFINE CLASS ZintBarcode AS Custom
 		WriteCharArray(This.Symbol + 52, PADR(m.Outfile, 255, CHR(0)) + CHR(0))
 	ENDPROC
 
+	**** Scale [float@308]
 	PROCEDURE GetScale () AS Float
 		SAFETHIS
 
@@ -700,6 +724,8 @@ DEFINE CLASS ZintBarcode AS Custom
 	ENDPROC
 
 	* options are indexed 1..3
+
+	**** Option [int32[3]@312]
 	PROCEDURE GetOption (Option AS Integer) AS Integer
 		SAFETHIS
 
@@ -712,10 +738,11 @@ DEFINE CLASS ZintBarcode AS Custom
 		RETURN WriteInt(This.Symbol + 308 + MIN((MAX(INT(m.Option), 1)), 3) * 4, m.OptionValue)
 	ENDPROC
 
+	**** Show Human Readable Text [int32@324]
 	PROCEDURE GetShowHumanReadableText () AS Logical
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 324) = 1
+		RETURN ReadInt(This.Symbol + 324) == 1
 	ENDPROC
 
 	PROCEDURE SetShowHumanReadableText (ShowHumanReadableText AS Logical)
@@ -724,6 +751,7 @@ DEFINE CLASS ZintBarcode AS Custom
 		RETURN WriteInt(This.Symbol + 324, IIF(m.ShowHumanReadableText, 1, 0))
 	ENDPROC
 
+	**** Font Size [int32@328] **** Unused
 	PROCEDURE GetFontSize () AS Integer
 		SAFETHIS
 
@@ -736,6 +764,7 @@ DEFINE CLASS ZintBarcode AS Custom
 		WriteInt(This.Symbol + 328, m.FontSize)
 	ENDPROC
 
+	**** Input Mode [int32@332]
 	PROCEDURE GetInputMode () AS Integer
 		SAFETHIS
 
@@ -748,6 +777,7 @@ DEFINE CLASS ZintBarcode AS Custom
 		WriteInt(This.Symbol + 332, m.InputMode)
 	ENDPROC
 
+	**** Extended Channel Interpretation [int32@336]
 	PROCEDURE GetECI () AS Integer
 		SAFETHIS
 
@@ -760,6 +790,7 @@ DEFINE CLASS ZintBarcode AS Custom
 		WriteInt(This.Symbol + 336, m.ECI)
 	ENDPROC
 
+	**** Text [string@340]
 	PROCEDURE GetText () AS String
 		SAFETHIS
 
@@ -772,84 +803,98 @@ DEFINE CLASS ZintBarcode AS Custom
 		WriteCharArray(This.Symbol + 340, PADR(STRCONV(m.Text, 9), 128, CHR(0)))
 	ENDPROC
 
+	**** Rows [int32@468]
 	PROCEDURE GetRows () AS Integer
 		SAFETHIS
 
 		RETURN ReadInt(This.Symbol + 468)
 	ENDPROC
 
+	**** Width [int32@472]
 	PROCEDURE GetWidth () AS Integer
 		SAFETHIS
 
 		RETURN ReadInt(This.Symbol + 472)
 	ENDPROC
 
+	**** Primary message data [string@476]
 	PROCEDURE GetPrimary () AS String
 		SAFETHIS
 
 		RETURN ReadCharArray(This.Symbol + 476, 128)
 	ENDPROC
 
+	**** Encoded Data [string[200]@604]
 	PROCEDURE GetEncodedData () AS String
 		SAFETHIS
 
 		RETURN ReadBytes(This.Symbol + 604, 28600)	&& 200 * 143
 	ENDPROC
 
+	**** Row Height [float[200]@29204]
 	PROCEDURE GetRowHeight () AS String
 		SAFETHIS
 
-		RETURN ReadBytes(This.Symbol + 29204, 800)	&& 200 * sizeof(int)
+		RETURN ReadBytes(This.Symbol + 29204, 800)	&& 200 * sizeof(float)
 	ENDPROC
 
+	**** Error Text [string@30004]
 	PROCEDURE GetErrorText () AS String
 		SAFETHIS
 
 		RETURN ReadCString(This.Symbol + 30004)
 	ENDPROC
 
+	**** Bitmap Pointer [int32@30104]
 	PROCEDURE GetBitmapPointer () AS Long
 		SAFETHIS
 
 		RETURN ReadInt(This.Symbol + 30104)
 	ENDPROC
 
+	**** Bitmap Width [int32@30108]
 	PROCEDURE GetBitmapWidth () AS Integer
 		SAFETHIS
 
 		RETURN ReadInt(This.Symbol + 30108)
 	ENDPROC
 
+	**** Bitmap Height [int32@30112]
 	PROCEDURE GetBitmapHeight () AS Integer
 		SAFETHIS
 
 		RETURN ReadInt(This.Symbol + 30112)
 	ENDPROC
 
+	**** Alphamap Pointer [int32@30116]
 	PROCEDURE GetAlphamapPointer () AS Long
 		SAFETHIS
 
 		RETURN ReadInt(This.Symbol + 30116)
 	ENDPROC
 
+	**** Bitmap Byte Length [int32@30120]
 	PROCEDURE GetBitmapByteLength () AS Integer
 		SAFETHIS
 
 		RETURN ReadUInt(This.Symbol + 30120)
 	ENDPROC
 
+	**** Dot Size [float@30124]
 	PROCEDURE GetDotSize () AS Float
 		SAFETHIS
 
 		RETURN ReadFloat(This.Symbol + 30124)
 	ENDPROC
 
+	**** Vector Pointer [int32@30128]
 	PROCEDURE GetVectorPointer () AS Long
 		SAFETHIS
 
 		RETURN ReadInt(This.Symbol + 30128)
 	ENDPROC
 
+	**** Debug [int32@30132]
 	PROCEDURE GetDebug () AS Integer
 		SAFETHIS
 
@@ -862,6 +907,7 @@ DEFINE CLASS ZintBarcode AS Custom
 		WriteInt(This.Symbol + 30132, m.Debug)
 	ENDPROC
 
+	**** Warn Level [int32@30136]
 	PROCEDURE GetWarnLevel () AS Integer
 		SAFETHIS
 
@@ -1028,6 +1074,8 @@ DEFINE CLASS ZintEnumerations AS Custom
 	UNICODE_MODE = 1
 	GS1_MODE = 2
 	ESCAPE_MODE = 8
+	GS1PARENS_MODE = 16
+	GS1NOCHECK_MODE = 32
 
 && Data Matrix specific options (option_3)
 	DM_SQUARE = 100
@@ -1051,6 +1099,9 @@ DEFINE CLASS ZintEnumerations AS Custom
 	ZINT_ERROR_ENCODING_PROBLEM = 9
 	ZINT_ERROR_FILE_ACCESS = 10
 	ZINT_ERROR_MEMORY = 11
+	ZINT_ERROR_FILE_WRITE = 12
+	ZINT_ERROR_USES_ECI = 13
+	ZINT_ERROR_NONCOMPLIANT = 14
 
 && File types
 	OUT_BUFFER = 0
@@ -1080,6 +1131,7 @@ DEFINE CLASS ZintEnumerations AS Custom
 	ZINT_CAP_FIXED_RATIO = 0x0100 && Aspect ratio 
 	ZINT_CAP_READER_INIT = 0x0200
 	ZINT_CAP_FULL_MULTIBYTE = 0x0400
+	ZINT_CAP_MASK = 0x0800
 
 && Debug flags
 	ZINT_DEBUG_PRINT = 1
@@ -1116,10 +1168,8 @@ DEFINE CLASS ZintLibrary AS Custom
 			LONG zint_symbol, INTEGER rotate_angle
 		DECLARE INTEGER ZBarcode_ValidID IN (M.ZintDLL) ;
 			LONG symbol_id
-#IF	.F.		&& Capability interrogation not available in distributed DLL
 		DECLARE INTEGER ZBarcode_Cap IN (m.ZintDLL) ;
 			LONG symbol_id, LONG cap_flag
-#ENDIF
 
 	ENDPROC
 

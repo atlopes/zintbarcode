@@ -41,7 +41,9 @@ DO WHILE !EMPTY(m.Speaker)
 	m.HTTP.Open("Get", m.Server + m.Segment, .F.)
 	m.HTTP.Send()
 
-	REPLACE photo WITH m.HTTP.ResponseBody
+	IF m.HTTP.Status < 400
+		REPLACE photo WITH m.HTTP.ResponseBody
+	ENDIF
 
 	* title and url of the conference
 	m.Segment = STREXTRACT(m.Speaker, '<h4>Sessions:</h4>', '')

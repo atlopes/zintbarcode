@@ -61,9 +61,9 @@ Returns a full-path filename, or an empty string in case of error (more informat
 
 ----------
 
-#### IsSupported (Symbology AS Integer) AS Logical
+#### IsSupported (Symbology AS Integer[, Feature AS Integer]) AS Logical
 
-Checks if a given symbology identifier is supported by the library.
+Checks if a given symbology identifier is supported by the library, or if a symbology supports a feature or group of features. Features are enumerated by the `ZINT_CAP_*` properties of the ZintEnumerarions class.
 
 Returns logical.
 
@@ -104,8 +104,8 @@ All Set methods have a single parameter of the indicated type, except the `SetOp
 | EncodedData |  | • | C |  |
 | ErrorText |  | • | C |  |
 | FGColour | • | • | I | Translated as VFP color values. |
-| FontSize | • | • | I |  |
-| Height | • | • | I |  |
+| FontSize | • | • | I | Unused. |
+| Height | • | • | N |  |
 | InputMode | • | • | I |  |
 | Option | • | • | I | Index of option (1-3) is indicated in the first parameter. |
 | OutputOptions | • | • | I |  |
@@ -117,7 +117,7 @@ All Set methods have a single parameter of the indicated type, except the `SetOp
 | *OverlayPosition* | • | • | C | Position of the overlay image: C, TL, TR, BL, BR (Center, Top, Bottom, Right, Left). |
 | *OverlayWidth* | • | • | I | In pixels. When the width and the height of an overlay area are set, the overlay image is resized to fit. |
 | Primary |  | • | C |  |
-| RowHeight |  | • | C | A binary string. |
+| RowHeight |  | • | C | A binary string / buffer. |
 | Rows |  | • | I |  |
 | Scale | • | • | N |  |
 | *SingleFile* | • | • | L | Used to indicate if a single temporary file is sufficient to store the barcodes required by the application. |
@@ -126,5 +126,6 @@ All Set methods have a single parameter of the indicated type, except the `SetOp
 | Text | • | • | C | The class encodes the text as UTF-8. Max. 127 length (after encoding).  |
 | VectorPointer |  | • | I |  |
 | WarnLevel | • | • | I |  |
+| WhitespaceHeight | • | • | I |  |
 | WhitespaceWidth | • | • | I |  |
 | Width |  | • | I |  |
