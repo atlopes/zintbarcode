@@ -29,11 +29,13 @@ DEFINE CLASS ZintBarcode AS Custom
 	* manage storage
 	ADD OBJECT PROTECTED ImageFiles AS Collection
 
-	PROTECTED Symbol, TempFolder, OwnFolder, SingleFile
+	PROTECTED Symbol, ZVersion, TempFolder, OwnFolder, SingleFile
 	PROTECTED OverlayImage, OverlayPosition, OverlayWidth, OverlayHeight, OverlayMargin, OverlayIsometric
 
 	* the address of the Zint symbol structure
 	Symbol = 0
+	* the version of Zint library
+	ZVersion = 0
 	* location of temporary images (used to set the ControlSource of controls in forms and reports)
 	TempFolder = ""
 	OwnFolder = .F.
@@ -47,6 +49,7 @@ DEFINE CLASS ZintBarcode AS Custom
 	OverlayIsometric = .T.
 
 	_MemberData = '<VFPData>' + ;
+						'<memberdata name="getversion" type="method" display="GetVersion" />' + ;
 						'<memberdata name="encodesave" type="method" display="EncodeSave" />' + ;
 						'<memberdata name="encode" type="method" display="Encode" />' + ;
 						'<memberdata name="save" type="method" display="Save" />' + ;
@@ -124,6 +127,9 @@ DEFINE CLASS ZintBarcode AS Custom
 		* get a Zint symbol structure from the Zint library
 		This.Symbol = ZBarcode_Create()
 
+		* get the version of the Zint library
+		This.ZVersion = ZBarcode_Version()
+
 		* create a folder for temporary images, or use the general temporary folder if that is not possible
 		LOCAL Retries AS Integer
 
@@ -170,6 +176,17 @@ DEFINE CLASS ZintBarcode AS Custom
 				ENDTRY
 			ENDFOR
 
+		ENDIF
+
+	ENDPROC
+
+	* returns Zint Version
+	PROCEDURE GetVersion (MajorMinor AS Logical) AS String
+
+		IF m.MajorMinor
+			RETURN LTRIM(CHRTRAN(TRANSFORM(FLOOR(This.ZVersion / 100), "@R 99-99"), "-", "."))
+		ELSE
+			RETURN LTRIM(CHRTRAN(TRANSFORM(This.ZVersion, "@R 99-99-99"), "-", "."))
 		ENDIF
 
 	ENDPROC
@@ -1170,6 +1187,7 @@ DEFINE CLASS ZintLibrary AS Custom
 			LONG symbol_id
 		DECLARE INTEGER ZBarcode_Cap IN (m.ZintDLL) ;
 			LONG symbol_id, LONG cap_flag
+		DECLARE INTEGER ZBarcode_Version IN (m.ZintDLL)
 
 	ENDPROC
 
