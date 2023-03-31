@@ -34,6 +34,8 @@ DEFINE CLASS ZintBarcode AS Custom
 
 	* the address of the Zint symbol structure
 	Symbol = 0
+	* members of a Zint symbol structure
+	ZStructure = .NULL.
 	* the version of Zint library
 	ZVersion = 0
 	* location of temporary images (used to set the ControlSource of controls in forms and reports)
@@ -129,6 +131,7 @@ DEFINE CLASS ZintBarcode AS Custom
 
 		* get the version of the Zint library
 		This.ZVersion = ZBarcode_Version()
+		This.ZStructure = CREATEOBJECT("ZintStructure", This.GetVersion(.T.))
 
 		* create a folder for temporary images, or use the general temporary folder if that is not possible
 		LOCAL Retries AS Integer
@@ -602,339 +605,478 @@ DEFINE CLASS ZintBarcode AS Custom
 	* check Zint documentation, mainly at https://www.zint.org.uk/manual-05.php (in particular 5.6)
 	* and https://www.zint.org.uk/manual-06-01.php
 
-	**** Symbology [int32@0]
+	**** Symbology
 	PROCEDURE GetSymbology () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSSymbology)
 	ENDPROC
 
 	PROCEDURE SetSymbology (Symbology AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol, m.Symbology)
+		WriteInt(This.Symbol + This.ZStructure.ZSSymbology, m.Symbology)
 	ENDPROC
 
-	**** Height [float@4]
+	**** Height
 	PROCEDURE GetHeight () AS Float
 		SAFETHIS
 
-		RETURN ReadFloat(This.Symbol + 4)
+		RETURN ReadFloat(This.Symbol + This.ZStructure.ZSHeight)
 	ENDPROC
 
 	PROCEDURE SetHeight (Height AS Float)
 		SAFETHIS
 
-		WriteFloat(This.Symbol + 4, m.Height)
+		WriteFloat(This.Symbol + This.ZStructure.ZSHeight, m.Height)
 	ENDPROC
 
-	**** Whitespace Width [int32@8]
+	**** Whitespace Width
 	PROCEDURE GetWhitespaceWidth () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 8)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSWhitespaceWidth)
 	ENDPROC
 
 	PROCEDURE SetWhitespaceWidth (WhitespaceWidth AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol + 8, m.WhitespaceWidth)
+		WriteInt(This.Symbol + This.ZStructure.ZSWhitespaceWidth, m.WhitespaceWidth)
 	ENDPROC
 
-	**** Whitespace Height [int32@12]
+	**** Whitespace Height
 	PROCEDURE GetWhitespaceHeight () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 12)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSWhitespaceHeight)
 	ENDPROC
 
 	PROCEDURE SetWhitespaceHeight (WhitespaceHeight AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol + 12, m.WhitespaceHeight)
+		WriteInt(This.Symbol + This.ZStructure.ZSWhitespaceHeight, m.WhitespaceHeight)
 	ENDPROC
 
-	**** Border Width [int32@16]
+	**** Border Width
 	PROCEDURE GetBorderWidth () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 16)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSBorderWidth)
 	ENDPROC
 
 	PROCEDURE SetBorderWidth (BorderWidth AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol + 16, m.BorderWidth)
+		WriteInt(This.Symbol + This.ZStructure.ZSBorderWidth, m.BorderWidth)
 	ENDPROC
 
-	**** Output Options [int32@20]
+	**** Output Options
 	PROCEDURE GetOutputOptions () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 20)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSOutputOptions)
 	ENDPROC
 
 	PROCEDURE SetOutputOptions (OutputOptions AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol + 20, m.OutputOptions)
+		WriteInt(This.Symbol + This.ZStructure.ZSOutputOptions, m.OutputOptions)
 	ENDPROC
 
 	* colors are translated back and forth to VFP's RGB() colors
 
-	*** Foreground Colour [string@24]
+	*** Foreground Colour
 	PROCEDURE GetFGColour () AS Integer
 		SAFETHIS
 
 		LOCAL HexString AS String
 
-		m.HexString = PADR(ReadCString(This.Symbol + 24), 6, "0")
+		m.HexString = PADR(ReadCString(This.Symbol + This.ZStructure.ZSFGColour), 6, "0")
 		RETURN EVALUATE("0x" + RIGHT(m.HexString, 2) + SUBSTR(m.HexString, 3, 2) + LEFT(m.HexString, 2))
 	ENDPROC
 
 	PROCEDURE SetFGColour (FGColour AS Integer)
 		SAFETHIS
 
-		WriteCharArray(This.Symbol + 24, SUBSTR(TRANSFORM(CTOBIN(BINTOC(m.FGColour, "S"), "4RS"), "@0"), 3, 6) + CHR(0))
+		WriteCharArray(This.Symbol + This.ZStructure.ZSFGColour, SUBSTR(TRANSFORM(CTOBIN(BINTOC(m.FGColour, "S"), "4RS"), "@0"), 3, 6) + CHR(0))
 	ENDPROC
 
-	*** Background Colour [string@34]
+	*** Background Colour
 	PROCEDURE GetBGColour () AS Integer
 		SAFETHIS
 
 		LOCAL HexString AS String
 
-		m.HexString = PADR(ReadCString(This.Symbol + 34), 6, "0")
+		m.HexString = PADR(ReadCString(This.Symbol + This.ZStructure.ZSBGColour), 6, "0")
 		RETURN EVALUATE("0x" + RIGHT(m.HexString, 2) + SUBSTR(m.HexString, 3, 2) + LEFT(m.HexString, 2))
 	ENDPROC
 
 	PROCEDURE SetBGColour (BGColour AS Integer)
 		SAFETHIS
 
-		WriteCharArray(This.Symbol + 34, SUBSTR(TRANSFORM(CTOBIN(BINTOC(m.BGColour, "S"), "4RS"), "@0"), 3, 6) + CHR(0))
+		WriteCharArray(This.Symbol + This.ZStructure.ZSBGColour, SUBSTR(TRANSFORM(CTOBIN(BINTOC(m.BGColour, "S"), "4RS"), "@0"), 3, 6) + CHR(0))
 	ENDPROC
 
-	**** Out File [string@52]
+	**** Out File
 	PROCEDURE GetOutfile () AS String
 		SAFETHIS
 
-		RETURN ReadCString(This.Symbol + 52)
+		RETURN ReadCString(This.Symbol + This.ZStructure.ZSOutfile)
 	ENDPROC
 
 	PROCEDURE SetOutfile (Outfile AS String)
 		SAFETHIS
 
-		WriteCharArray(This.Symbol + 52, PADR(m.Outfile, 255, CHR(0)) + CHR(0))
+		WriteCharArray(This.Symbol + This.ZStructure.ZSOutfile, PADR(m.Outfile, This.ZStructure.ZSOutfileLen - 1, CHR(0)) + CHR(0))
 	ENDPROC
 
-	**** Scale [float@308]
+	**** Scale
 	PROCEDURE GetScale () AS Float
 		SAFETHIS
 
-		RETURN ReadFloat(This.Symbol + 308)
+		RETURN ReadFloat(This.Symbol + This.ZStructure.ZSScale)
 	ENDPROC
 
 	PROCEDURE SetScale (Scale AS Float)
 		SAFETHIS
 
-		RETURN WriteFloat(This.Symbol + 308, m.Scale)
+		RETURN WriteFloat(This.Symbol + This.ZStructure.ZSScale, m.Scale)
 	ENDPROC
 
 	* options are indexed 1..3
 
-	**** Option [int32[3]@312]
+	**** Option
 	PROCEDURE GetOption (Option AS Integer) AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 308 + MIN((MAX(INT(m.Option), 1)), 3) * 4)
+		RETURN ReadInt(This.Symbol + (This.ZStructure.ZSOption - 4) + MIN((MAX(INT(m.Option), 1)), 3) * 4)
 	ENDPROC
 
 	PROCEDURE SetOption (Option AS Integer, OptionValue AS Integer) AS Integer
 		SAFETHIS
 
-		RETURN WriteInt(This.Symbol + 308 + MIN((MAX(INT(m.Option), 1)), 3) * 4, m.OptionValue)
+		RETURN WriteInt(This.Symbol + (This.ZStructure.ZSOption - 4) + MIN((MAX(INT(m.Option), 1)), 3) * 4, m.OptionValue)
 	ENDPROC
 
-	**** Show Human Readable Text [int32@324]
+	**** Show Human Readable Text
 	PROCEDURE GetShowHumanReadableText () AS Logical
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 324) == 1
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSShowHumanReadableText) == 1
 	ENDPROC
 
 	PROCEDURE SetShowHumanReadableText (ShowHumanReadableText AS Logical)
 		SAFETHIS
 
-		RETURN WriteInt(This.Symbol + 324, IIF(m.ShowHumanReadableText, 1, 0))
+		RETURN WriteInt(This.Symbol + This.ZStructure.ZSShowHumanReadableText, IIF(m.ShowHumanReadableText, 1, 0))
 	ENDPROC
 
-	**** Font Size [int32@328] **** Unused
+	**** Font Size **** Unused
 	PROCEDURE GetFontSize () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 328)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSFontSize)
 	ENDPROC
 
 	PROCEDURE SetFontSize (FontSize AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol + 328, m.FontSize)
+		WriteInt(This.Symbol + This.ZStructure.ZSFontSize, m.FontSize)
 	ENDPROC
 
-	**** Input Mode [int32@332]
+	**** Input Mode
 	PROCEDURE GetInputMode () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 332)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSInputMode)
 	ENDPROC
 
 	PROCEDURE SetInputMode (InputMode AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol + 332, m.InputMode)
+		WriteInt(This.Symbol + This.ZStructure.ZSInputMode, m.InputMode)
 	ENDPROC
 
-	**** Extended Channel Interpretation [int32@336]
+	**** Extended Channel Interpretation
 	PROCEDURE GetECI () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 336)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSECI)
 	ENDPROC
 
 	PROCEDURE SetECI (ECI AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol + 336, m.ECI)
+		WriteInt(This.Symbol + This.ZStructure.ZSECI, m.ECI)
 	ENDPROC
 
-	**** Text [string@340]
+	**** Text
 	PROCEDURE GetText () AS String
 		SAFETHIS
 
-		RETURN STRCONV(ReadCharArray(This.Symbol + 340, 128), 11)
+		RETURN STRCONV(ReadCharArray(This.Symbol + This.ZStructure.ZSText, This.ZStructure.ZSTextLen), 11)
 	ENDPROC
 
 	PROCEDURE SetText (Text AS String)
 		SAFETHIS
 
-		WriteCharArray(This.Symbol + 340, PADR(STRCONV(m.Text, 9), 128, CHR(0)))
+		WriteCharArray(This.Symbol + This.ZStructure.ZSText, PADR(STRCONV(m.Text, 9), This.ZStructure.ZSTextLen, CHR(0)))
 	ENDPROC
 
-	**** Rows [int32@468]
+	**** Rows
 	PROCEDURE GetRows () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 468)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSRows)
 	ENDPROC
 
-	**** Width [int32@472]
+	**** Width
 	PROCEDURE GetWidth () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 472)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSWidth)
 	ENDPROC
 
-	**** Primary message data [string@476]
+	**** Primary message data
 	PROCEDURE GetPrimary () AS String
 		SAFETHIS
 
-		RETURN ReadCharArray(This.Symbol + 476, 128)
+		RETURN ReadCharArray(This.Symbol + This.ZStructure.ZSPrimary, This.ZStructure.ZSPrimaryLen)
 	ENDPROC
 
-	**** Encoded Data [string[200]@604]
+	**** Encoded Data
 	PROCEDURE GetEncodedData () AS String
 		SAFETHIS
 
-		RETURN ReadBytes(This.Symbol + 604, 28600)	&& 200 * 143
+		RETURN ReadBytes(This.Symbol + This.ZStructure.ZSEncodedData, This.ZStructure.ZSEncodedDataLen)
 	ENDPROC
 
-	**** Row Height [float[200]@29204]
+	**** Row Height
 	PROCEDURE GetRowHeight () AS String
 		SAFETHIS
 
-		RETURN ReadBytes(This.Symbol + 29204, 800)	&& 200 * sizeof(float)
+		RETURN ReadBytes(This.Symbol + This.ZStructure.ZSRowHeight, 800)	&& 200 * sizeof(float)
 	ENDPROC
 
-	**** Error Text [string@30004]
+	**** Error Text
 	PROCEDURE GetErrorText () AS String
 		SAFETHIS
 
-		RETURN ReadCString(This.Symbol + 30004)
+		RETURN ReadCString(This.Symbol + This.ZStructure.ZSErrorText)
 	ENDPROC
 
-	**** Bitmap Pointer [int32@30104]
+	**** Bitmap Pointer
 	PROCEDURE GetBitmapPointer () AS Long
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 30104)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSBitmapPointer)
 	ENDPROC
 
-	**** Bitmap Width [int32@30108]
+	**** Bitmap Width
 	PROCEDURE GetBitmapWidth () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 30108)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSBitmapWidth)
 	ENDPROC
 
-	**** Bitmap Height [int32@30112]
+	**** Bitmap Height
 	PROCEDURE GetBitmapHeight () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 30112)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSBitmapHeight)
 	ENDPROC
 
-	**** Alphamap Pointer [int32@30116]
+	**** Alphamap Pointer
 	PROCEDURE GetAlphamapPointer () AS Long
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 30116)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSAlphamapPointer)
 	ENDPROC
 
-	**** Bitmap Byte Length [int32@30120]
+	**** Bitmap Byte Length
 	PROCEDURE GetBitmapByteLength () AS Integer
 		SAFETHIS
 
-		RETURN ReadUInt(This.Symbol + 30120)
+		RETURN ReadUInt(This.Symbol + This.ZStructure.ZSBitmapByteLength)
 	ENDPROC
 
-	**** Dot Size [float@30124]
+	**** Dot Size
 	PROCEDURE GetDotSize () AS Float
 		SAFETHIS
 
-		RETURN ReadFloat(This.Symbol + 30124)
+		RETURN ReadFloat(This.Symbol + This.ZStructure.ZSDotSize)
 	ENDPROC
 
-	**** Vector Pointer [int32@30128]
+	**** Vector Pointer
 	PROCEDURE GetVectorPointer () AS Long
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 30128)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSVectorPointer)
 	ENDPROC
 
-	**** Debug [int32@30132]
+	**** Debug
 	PROCEDURE GetDebug () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 30132)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSDebug)
 	ENDPROC
 
 	PROCEDURE SetDebug (Debug AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol + 30132, m.Debug)
+		WriteInt(This.Symbol + This.ZStructure.ZSDebug, m.Debug)
 	ENDPROC
 
 	**** Warn Level [int32@30136]
 	PROCEDURE GetWarnLevel () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + 30136)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSWarnLevel)
 	ENDPROC
         
 	PROCEDURE SetWarnLevel (WarnLevel AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol + 30136, m.WarnLevel)
+		WriteInt(This.Symbol + This.ZStructure.ZSWarnLevel, m.WarnLevel)
+	ENDPROC
+
+ENDDEFINE
+
+*
+* ZintStructure
+* a version-aware class to address elements of the Zint.Symbol structure
+*
+DEFINE CLASS ZintStructure AS Custom
+
+	ZSSymbology = .NULL.
+	ZSHeight = .NULL.
+	ZSWhitespaceWidth = .NULL.
+	ZSWhitespaceHeight = .NULL.
+	ZSBorderWidth = .NULL.
+	ZSOutputOptions = .NULL.
+	ZSFGColour = .NULL.
+	ZSBGColour = .NULL.
+	ZSOutfile = .NULL.
+	ZSOutfileLen = .NULL.
+	ZSScale = .NULL.
+	ZSOption = .NULL.
+	ZSShowHumanReadableText = .NULL.
+	ZSFontSize = .NULL.
+	ZSInputMode = .NULL.
+	ZSECI = .NULL.
+	ZSDotSize = .NULL.
+	ZSGuardDescent = .NULL.
+	ZSDotsPerMM = .NULL.
+	ZSText = .NULL.
+	ZSTextLen = .NULL.
+	ZSRows = .NULL.
+	ZSWidth = .NULL.
+	ZSPrimary = .NULL.
+	ZSPrimaryLen = .NULL.
+	ZSEncodedData = .NULL.
+	ZSEncodedDataLen = .NULL.
+	ZSRowHeight = .NULL.
+	ZSErrorText = .NULL.
+	ZSBitmapPointer = .NULL.
+	ZSBitmapWidth = .NULL.
+	ZSBitmapHeight = .NULL.
+	ZSAlphamapPointer = .NULL.
+	ZSBitmapByteLength = .NULL.
+	ZSDotSize = .NULL.
+	ZSVectorPointer = .NULL.
+	ZSDebug = .NULL.
+	ZSWarnLevel = .NULL.
+
+	PROCEDURE Init (ZintVersion AS String)
+
+		LOCAL Offset AS Integer
+		LOCAL NVersion AS Number
+
+		m.NVersion = VAL(CHRTRAN(m.ZintVersion, ".", SET("Point")))
+
+		This.ZSSymbology = 0
+		This.ZSHeight = 4
+
+		IF m.NVersion < 2.11
+			This.ZSScale = 308
+			m.Offset = 0
+		ELSE
+			This.ZSScale = 8
+			m.Offset = 4		&& skip scale
+		ENDIF
+
+		This.ZSWhitespaceWidth = m.Offset + 8
+		This.ZSWhitespaceHeight = m.Offset + 12
+		This.ZSBorderWidth = m.Offset + 16
+		This.ZSOutputOptions = m.Offset + 20
+		This.ZSFGColour = m.Offset + 24
+		This.ZSBGColour = m.Offset + 34
+		This.ZSOutfile = m.Offset + 52
+		This.ZSOutfileLen = 256
+
+		IF m.NVersion < 2.11
+			This.ZSPrimary = m.Offset + 476
+		ELSE
+			This.ZSPrimary = m.Offset + 308
+			m.Offset = 128		&& skip primary, get scale back
+		ENDIF
+		This.ZSPrimaryLen = 128
+
+		This.ZSOption = m.Offset + 312
+		This.ZSShowHumanReadableText = m.Offset + 324
+		This.ZSFontSize = m.Offset + 328
+		This.ZSInputMode = m.Offset + 332
+		This.ZSECI = m.Offset + 336
+
+		IF m.NVersion >= 2.11
+			IF m.NVersion >= 2.12
+				This.ZSDotsPerMM = m.Offset + 340
+				m.Offset = m.Offset + 4			&& skip dpmm
+			ENDIF
+			This.ZSDotSize = m.Offset + 340
+			This.ZSGuardDescent = m.Offset + 344
+			m.Offset = m.Offset + 48		&& skip these + structapp
+			This.ZSWarnLevel = m.Offset + 340
+			This.ZSDebug = m.Offset + 348
+			m.Offset = m.Offset + 8
+		ELSE
+			This.ZSDotSize = m.Offset + 30124
+			This.ZSWarnLevel = m.Offset + 30136
+			This.ZSDebug = m.Offset + 30132
+		ENDIF
+
+		This.ZSText = m.Offset + 340
+		This.ZSTextLen = 128
+		This.ZSRows = m.Offset + 348
+		This.ZSWidth = m.Offset + 352
+
+		IF m.NVersion < 2.11
+			This.ZSEncodedDataLen = 200 * 143
+		ELSE
+			This.ZSEncodedDataLen = 200 * 144
+			m.Offset = m.Offset - 128			&& get primary back
+		ENDIF
+
+		This.ZSEncodedData = m.Offset + 604
+
+		IF m.NVersion >= 2.11
+			m.Offset = m.Offset + 200			&& skip one row of encoded data
+		ENDIF
+
+		This.ZSRowHeight = m.Offset + 29204
+		This.ZSErrorText = m.Offset + 30004
+		This.ZSBitmapPointer = m.Offset + 30104
+		This.ZSBitmapWidth = m.Offset + 30108
+		This.ZSBitmapHeight = m.Offset + 30112
+		This.ZSAlphamapPointer = m.Offset + 30116
+		This.ZSBitmapByteLength = m.Offset + 30120
+
+		IF m.NVersion >= 2.11
+			m.Offset = m.Offset - 4			&& get back dot size
+		ENDIF
+
+		This.ZSVectorPointer = m.Offset + 30136
+
 	ENDPROC
 
 ENDDEFINE
@@ -1044,7 +1186,10 @@ DEFINE CLASS ZintEnumerations AS Custom
 	BARCODE_HANXIN = 116
 
     &&Tbarcode 11 codes
-	BARCODE_MAILMARK = 121
+	BARCODE_MAILMARK_2D = 119
+	BARCODE_UPU_S10 = 120
+	BARCODE_MAILMARK_4S = 121
+	BARCODE_MAILMARK = 121 && Legacy
 
     && Zint specific 
 	BARCODE_AZRUNE = 128
@@ -1072,9 +1217,10 @@ DEFINE CLASS ZintEnumerations AS Custom
 	BARCODE_UPNQR = 143
 	BARCODE_ULTRA = 144
 	BARCODE_RMQR = 145
+	BARCODE_BC412 = 146
 
 && Output options
-	BARCODE_NO_ASCII = 1
+	BARCODE_BIND_TOP = 1
 	BARCODE_BIND = 2
 	BARCODE_BOX = 4
 	BARCODE_STDOUT = 8
@@ -1085,6 +1231,9 @@ DEFINE CLASS ZintEnumerations AS Custom
 	BARCODE_DOTTY_MODE = 256
 	GS1_GS_SEPARATOR = 512
 	OUT_BUFFER_INTERMEDIATE = 1024
+	BARCODE_QUIET_ZONES = 2048
+	BARCODE_NO_QUIET_ZONES = 4096
+	COMPLIANT_HEIGHT = 8192
 
 && Input data types
 	DATA_MODE = 0
@@ -1093,6 +1242,8 @@ DEFINE CLASS ZintEnumerations AS Custom
 	ESCAPE_MODE = 8
 	GS1PARENS_MODE = 16
 	GS1NOCHECK_MODE = 32
+	HEIGHTPERROW_MODE = 64
+	FAST_MODE = 128
 
 && Data Matrix specific options (option_3)
 	DM_SQUARE = 100
@@ -1149,6 +1300,8 @@ DEFINE CLASS ZintEnumerations AS Custom
 	ZINT_CAP_READER_INIT = 0x0200
 	ZINT_CAP_FULL_MULTIBYTE = 0x0400
 	ZINT_CAP_MASK = 0x0800
+	ZINT_CAP_STRUCTAPP = 0x1000
+	ZINT_CAP_COMPLIANT_HEIGHT = 0x2000
 
 && Debug flags
 	ZINT_DEBUG_PRINT = 1
