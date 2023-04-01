@@ -1,7 +1,7 @@
 # zintBarcode classes
 ## Overview
 
-**zintBarcode** comprises a functional class (named **ZintBarcode**) and two support classes (**ZintLibrary** and **ZintEnumerations**).
+**zintBarcode** comprises a functional class (named **ZintBarcode**) and three support classes (**ZintLibrary**, **ZintEnumerations**, and **ZintStructure**).
 
 **ZintLibrary** loads the required **Zint** and **VFP2C32** libraries into VFP. It's instantiated in the preamble code of `zintbarcode.prg`.
 
@@ -18,6 +18,9 @@ instead of
 m.ZS.SetSymbology(71)
 m.ZS.SetOption(3, 100)
 ```
+
+**ZintStructure** is a companion class that helps the operation of the **Zint** API in a version-independent fashion.
+
 ## ZintBarcode methods
 
 The production of a barcode is a three-step process:
@@ -105,6 +108,7 @@ All Set methods have a single parameter of the indicated type, except the `SetOp
 | ErrorText |  | • | C |  |
 | FGColour | • | • | I | Translated as VFP color values. |
 | FontSize | • | • | I | Unused. |
+| GuardDescent | • | • | N |  |
 | Height | • | • | N |  |
 | InputMode | • | • | I |  |
 | Option | • | • | I | Index of option (1-3) is indicated in the first parameter. |
@@ -116,14 +120,14 @@ All Set methods have a single parameter of the indicated type, except the `SetOp
 | *OverlayMargin* | • | • | I | Margin around an overlay image. Only for a resized overlay image. |
 | *OverlayPosition* | • | • | C | Position of the overlay image: C, TL, TR, BL, BR (Center, Top, Bottom, Right, Left). |
 | *OverlayWidth* | • | • | I | In pixels. When the width and the height of an overlay area are set, the overlay image is resized to fit. |
-| Primary |  | • | C |  |
+| Primary | • | • | C |  |
 | RowHeight |  | • | C | A binary string / buffer. |
 | Rows |  | • | I |  |
 | Scale | • | • | N |  |
 | *SingleFile* | • | • | L | Used to indicate if a single temporary file is sufficient to store the barcodes required by the application. |
 | ShowHumanReadableText | • | • | L |  |
 | Symbology | • | • | I |  |
-| Text | • | • | C | The class encodes the text as UTF-8. Max. 127 length (after encoding).  |
+| Text |  | • | C |  |
 | VectorPointer |  | • | I |  |
 | WarnLevel | • | • | I |  |
 | WhitespaceHeight | • | • | I |  |

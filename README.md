@@ -2,9 +2,9 @@
 ## Introduction
 **zintBarcode** provides a VFP connector to the [**Zint Barcode Generator**](https://www.zint.org.uk/ "Zint Home") library.
 
-**Zint** is an open source project that implements 1D and 2D barcode symbologies. The VFP connector uses the `zint.dll` library to access the **Zint** API.
+**Zint** is an open source project that implements 1D and 2D barcode symbologies. The VFP connector uses the `zint.dll` library to access the **Zint** API, and it's compatible with versions 2.10 to 2.12 (the last one, at the time of writing).
 
-Developers should refer to the **Zint** documentation for a presentation on the library (also in full at the [code repository](https://sourceforge.net/p/zint/code/ci/master/tree/docs/manual.txt "Full manual")).
+Developers should refer to the **Zint** documentation for a presentation on the library (Read The [Fine Manual](https://zint.org.uk/manual/ "Fine manual")).
 
 In particular, **zintBarcode** implements the following **Zint** API methods:
 
@@ -23,6 +23,8 @@ The **Zint** API is discussed in the [Section 5](https://www.zint.org.uk/manual-
 A description of the available symbologies and specific settings for them is presented in [Section 6](https://www.zint.org.uk/manual-06-01.php "Symbologies").
 
 Additionally, **zintBarcode** implements a high-level method that returns the name of a barcode image file. The name can be used as a Picture or Control Source in VFP reports and forms. See the demo section below, for an example of both scenarios.
+
+As an extension to the original library, **zintBarcode** supports the placement of image overlays on top of the generated barcodes. The demo section also presents a sample case. 
 
 ## Setup
 
@@ -200,7 +202,7 @@ DO demo\virtualfoxfest.prg
 
 [Unlicensed](UNLICENSE.md "Unlicense").
 
-**Zint** is Copyright © 2020 Robin Stuart, distributed under a BSD license.
+**Zint** is Copyright © 2023 Robin Stuart, distributed under a BSD license.
 
 **VFP2C32** by Christian Ehlscheid with collaboration of Eric Selje.
 

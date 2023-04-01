@@ -91,6 +91,8 @@ DEFINE CLASS ZintBarcode AS Custom
 						'<memberdata name="setbgcolour" type="method" display="SetBGColour" />' + ;
 						'<memberdata name="getoutfile" type="method" display="GetOutfile" />' + ;
 						'<memberdata name="setoutfile" type="method" display="SetOutfile" />' + ;
+						'<memberdata name="getprimary" type="method" display="GetPrimary" />' + ;
+						'<memberdata name="setprimary" type="method" display="SetPrimary" />' + ;
 						'<memberdata name="getscale" type="method" display="GetScale" />' + ;
 						'<memberdata name="setscale" type="method" display="SetScale" />' + ;
 						'<memberdata name="getoption" type="method" display="GetOption" />' + ;
@@ -103,11 +105,13 @@ DEFINE CLASS ZintBarcode AS Custom
 						'<memberdata name="setinputmode" type="method" display="SetInputMode" />' + ;
 						'<memberdata name="geteci" type="method" display="GetECI" />' + ;
 						'<memberdata name="seteci" type="method" display="SetECI" />' + ;
+						'<memberdata name="getdotsize" type="method" display="GetDotSize" />' + ;
+						'<memberdata name="setdotsize" type="method" display="SetDotSize" />' + ;
+						'<memberdata name="getguarddescent" type="method" display="GetGuardDescent" />' + ;
+						'<memberdata name="setguarddescent" type="method" display="SetGuardDescent" />' + ;
 						'<memberdata name="gettext" type="method" display="GetText" />' + ;
-						'<memberdata name="settext" type="method" display="SetText" />' + ;
 						'<memberdata name="getrows" type="method" display="GetRows" />' + ;
 						'<memberdata name="getwidth" type="method" display="GetWidth" />' + ;
-						'<memberdata name="getprimary" type="method" display="GetPrimary" />' + ;
 						'<memberdata name="getencodeddata" type="method" display="GetEncodedData" />' + ;
 						'<memberdata name="getrowheight" type="method" display="GetRowHeight" />' + ;
 						'<memberdata name="geterrortext" type="method" display="GetErrorText" />' + ;
@@ -116,7 +120,6 @@ DEFINE CLASS ZintBarcode AS Custom
 						'<memberdata name="getbitmapheight" type="method" display="GetBitmapHeight" />' + ;
 						'<memberdata name="getalphamappointer" type="method" display="GetAlphamapPointer" />' + ;
 						'<memberdata name="getbitmapbytelength" type="method" display="GetBitmapByteLength" />' + ;
-						'<memberdata name="getdotsize" type="method" display="GetDotSize" />' + ;
 						'<memberdata name="getvectorpointer" type="method" display="GetVectorPointer" />' + ;
 						'<memberdata name="getdebug" type="method" display="GetDebug" />' + ;
 						'<memberdata name="setdebug" type="method" display="SetDebug" />' + ;
@@ -501,6 +504,7 @@ DEFINE CLASS ZintBarcode AS Custom
 		This.SetFGColour(m.ZB.GetFGColour())
 		This.SetBGColour(m.ZB.GetBGColour())
 		This.SetOutfile(m.ZB.GetOutfile())
+		This.SetPrimary(m.ZB.GetPrimary())
 		This.SetScale(m.ZB.GetScale())
 		This.SetOption(1, m.ZB.GetOption(1))
 		This.SetOption(2, m.ZB.GetOption(2))
@@ -508,7 +512,8 @@ DEFINE CLASS ZintBarcode AS Custom
 		This.SetShowHumanReadableText(m.ZB.GetShowHumanReadableText())
 		This.SetInputMode(m.ZB.GetInputMode())
 		This.SetECI(m.ZB.GetECI())
-		This.SetText(m.ZB.GetText())
+		This.SetDotSize(m.ZB.GetDotSize())
+		This.SetGuardDescent(m.ZB.GetGuardDescent())
 
 	ENDPROC			
 
@@ -602,8 +607,8 @@ DEFINE CLASS ZintBarcode AS Custom
 	ENDPROC
 
 	* getters and setters of the Zint properties
-	* check Zint documentation, mainly at https://www.zint.org.uk/manual-05.php (in particular 5.6)
-	* and https://www.zint.org.uk/manual-06-01.php
+	* check Zint documentation, mainly at https://www.zint.org.uk/manual/chapter/5
+	* ordered as in the table in the Zint documentation (point 5.6)
 
 	**** Symbology
 	PROCEDURE GetSymbology () AS Integer
@@ -629,6 +634,19 @@ DEFINE CLASS ZintBarcode AS Custom
 		SAFETHIS
 
 		WriteFloat(This.Symbol + This.ZStructure.ZSHeight, m.Height)
+	ENDPROC
+
+	**** Scale
+	PROCEDURE GetScale () AS Float
+		SAFETHIS
+
+		RETURN ReadFloat(This.Symbol + This.ZStructure.ZSScale)
+	ENDPROC
+
+	PROCEDURE SetScale (Scale AS Float)
+		SAFETHIS
+
+		RETURN WriteFloat(This.Symbol + This.ZStructure.ZSScale, m.Scale)
 	ENDPROC
 
 	**** Whitespace Width
@@ -727,20 +745,20 @@ DEFINE CLASS ZintBarcode AS Custom
 	PROCEDURE SetOutfile (Outfile AS String)
 		SAFETHIS
 
-		WriteCharArray(This.Symbol + This.ZStructure.ZSOutfile, PADR(m.Outfile, This.ZStructure.ZSOutfileLen - 1, CHR(0)) + CHR(0))
+		WriteCharArray(This.Symbol + This.ZStructure.ZSOutfile, PADR(m.Outfile, This.ZStructure.ZSOutfileLen - 1, CHR(0)))
 	ENDPROC
 
-	**** Scale
-	PROCEDURE GetScale () AS Float
+	**** Primary message data
+	PROCEDURE GetPrimary () AS String
 		SAFETHIS
 
-		RETURN ReadFloat(This.Symbol + This.ZStructure.ZSScale)
+		RETURN ReadCString(This.Symbol + This.ZStructure.ZSPrimary)
 	ENDPROC
 
-	PROCEDURE SetScale (Scale AS Float)
+	PROCEDURE SetPrimary (PrimaryMessage AS String)
 		SAFETHIS
 
-		RETURN WriteFloat(This.Symbol + This.ZStructure.ZSScale, m.Scale)
+		WriteCharArray(This.Symbol + This.ZStructure.ZSPrimary, PADR(m.PrimaryMessage, This.ZStructure.ZSPrimaryLen - 1, CHR(0)))
 	ENDPROC
 
 	* options are indexed 1..3
@@ -810,17 +828,39 @@ DEFINE CLASS ZintBarcode AS Custom
 		WriteInt(This.Symbol + This.ZStructure.ZSECI, m.ECI)
 	ENDPROC
 
+	**** Dot Size
+	PROCEDURE GetDotSize () AS Float
+		SAFETHIS
+
+		RETURN ReadFloat(This.Symbol + This.ZStructure.ZSDotSize)
+	ENDPROC
+
+	PROCEDURE SetDotSize (DotSize AS Float)
+		SAFETHIS
+
+		RETURN WriteFloat(This.Symbol + This.ZStructure.ZSDotSize, m.DotSize)
+	ENDPROC
+
+	**** Guard descent
+	PROCEDURE GetGuardDescent () AS Float
+		SAFETHIS
+
+		RETURN IIF(ISNULL(This.ZSstructure.ZSGuardDescent), 0.0, ReadFloat(This.Symbol + This.ZStructure.ZSGuardDescent))
+	ENDPROC
+
+	PROCEDURE SetGuardDescent (GuardDescent AS Float)
+		SAFETHIS
+
+		IF ! ISNULL(This.ZSstructure.ZSGuardDescent)
+			WriteFloat(This.Symbol + This.ZStructure.ZSGuardDescent, m.GuardDescent)
+		ENDIF
+	ENDPROC
+
 	**** Text
 	PROCEDURE GetText () AS String
 		SAFETHIS
 
 		RETURN STRCONV(ReadCharArray(This.Symbol + This.ZStructure.ZSText, This.ZStructure.ZSTextLen), 11)
-	ENDPROC
-
-	PROCEDURE SetText (Text AS String)
-		SAFETHIS
-
-		WriteCharArray(This.Symbol + This.ZStructure.ZSText, PADR(STRCONV(m.Text, 9), This.ZStructure.ZSTextLen, CHR(0)))
 	ENDPROC
 
 	**** Rows
@@ -835,13 +875,6 @@ DEFINE CLASS ZintBarcode AS Custom
 		SAFETHIS
 
 		RETURN ReadInt(This.Symbol + This.ZStructure.ZSWidth)
-	ENDPROC
-
-	**** Primary message data
-	PROCEDURE GetPrimary () AS String
-		SAFETHIS
-
-		RETURN ReadCharArray(This.Symbol + This.ZStructure.ZSPrimary, This.ZStructure.ZSPrimaryLen)
 	ENDPROC
 
 	**** Encoded Data
@@ -898,13 +931,6 @@ DEFINE CLASS ZintBarcode AS Custom
 		SAFETHIS
 
 		RETURN ReadUInt(This.Symbol + This.ZStructure.ZSBitmapByteLength)
-	ENDPROC
-
-	**** Dot Size
-	PROCEDURE GetDotSize () AS Float
-		SAFETHIS
-
-		RETURN ReadFloat(This.Symbol + This.ZStructure.ZSDotSize)
 	ENDPROC
 
 	**** Vector Pointer
@@ -1010,17 +1036,27 @@ DEFINE CLASS ZintStructure AS Custom
 		This.ZSBorderWidth = m.Offset + 16
 		This.ZSOutputOptions = m.Offset + 20
 		This.ZSFGColour = m.Offset + 24
+		* there seems to be a discrepancy between the zint.dll 2.12 symbol structure
+		* and its definition in zint.h
+		* fgcolour and bgcolour are defined as char[16], but built as char[10], as in previous versions
+		* commented, for the time being
+*!*			IF m.NVersion >= 2.12
+*!*				m.Offset = m.Offset + 6		&& color info size increased by 6
+*!*			ENDIF
 		This.ZSBGColour = m.Offset + 34
+*!*			IF m.NVersion >= 2.12
+*!*				m.Offset = m.Offset + 6		&& color info size increased by 6
+*!*			ENDIF
 		This.ZSOutfile = m.Offset + 52
 		This.ZSOutfileLen = 256
 
+		This.ZSPrimaryLen = 128
 		IF m.NVersion < 2.11
 			This.ZSPrimary = m.Offset + 476
 		ELSE
 			This.ZSPrimary = m.Offset + 308
-			m.Offset = 128		&& skip primary, get scale back
+			m.Offset = m.Offset + 128 - 4		&& skip primary, get scale back
 		ENDIF
-		This.ZSPrimaryLen = 128
 
 		This.ZSOption = m.Offset + 312
 		This.ZSShowHumanReadableText = m.Offset + 324
