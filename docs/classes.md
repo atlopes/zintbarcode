@@ -102,7 +102,8 @@ All Set methods have a single parameter of the indicated type, except the `SetOp
 | BitmapWidth |  | • | I |  |
 | BorderWidth | • | • | I |  |
 | Debug | • | • | I |  |
-| DotSize |  | • | N |  |
+| DotSize | • | • | N |  |
+| DotsPerMM | • | • | N |  |
 | ECI | • | • | I |  |
 | EncodedData |  | • | C |  |
 | ErrorText |  | • | C |  |

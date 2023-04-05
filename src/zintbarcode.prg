@@ -105,6 +105,8 @@ DEFINE CLASS ZintBarcode AS Custom
 						'<memberdata name="setinputmode" type="method" display="SetInputMode" />' + ;
 						'<memberdata name="geteci" type="method" display="GetECI" />' + ;
 						'<memberdata name="seteci" type="method" display="SetECI" />' + ;
+						'<memberdata name="getdotspermm" type="method" display="GetDotsPerMM" />' + ;
+						'<memberdata name="setdotspermm" type="method" display="SetDotsPerMM" />' + ;
 						'<memberdata name="getdotsize" type="method" display="GetDotSize" />' + ;
 						'<memberdata name="setdotsize" type="method" display="SetDotSize" />' + ;
 						'<memberdata name="getguarddescent" type="method" display="GetGuardDescent" />' + ;
@@ -608,7 +610,7 @@ DEFINE CLASS ZintBarcode AS Custom
 
 	* getters and setters of the Zint properties
 	* check Zint documentation, mainly at https://www.zint.org.uk/manual/chapter/5
-	* ordered as in the table in the Zint documentation (point 5.6)
+	* ordered as in the table in the Zint documentation (point 5.6) or zint.h
 
 	**** Symbology
 	PROCEDURE GetSymbology () AS Integer
@@ -646,7 +648,7 @@ DEFINE CLASS ZintBarcode AS Custom
 	PROCEDURE SetScale (Scale AS Float)
 		SAFETHIS
 
-		RETURN WriteFloat(This.Symbol + This.ZStructure.ZSScale, m.Scale)
+		WriteFloat(This.Symbol + This.ZStructure.ZSScale, m.Scale)
 	ENDPROC
 
 	**** Whitespace Width
@@ -773,7 +775,7 @@ DEFINE CLASS ZintBarcode AS Custom
 	PROCEDURE SetOption (Option AS Integer, OptionValue AS Integer) AS Integer
 		SAFETHIS
 
-		RETURN WriteInt(This.Symbol + (This.ZStructure.ZSOption - 4) + MIN((MAX(INT(m.Option), 1)), 3) * 4, m.OptionValue)
+		WriteInt(This.Symbol + (This.ZStructure.ZSOption - 4) + MIN((MAX(INT(m.Option), 1)), 3) * 4, m.OptionValue)
 	ENDPROC
 
 	**** Show Human Readable Text
@@ -786,7 +788,7 @@ DEFINE CLASS ZintBarcode AS Custom
 	PROCEDURE SetShowHumanReadableText (ShowHumanReadableText AS Logical)
 		SAFETHIS
 
-		RETURN WriteInt(This.Symbol + This.ZStructure.ZSShowHumanReadableText, IIF(m.ShowHumanReadableText, 1, 0))
+		WriteInt(This.Symbol + This.ZStructure.ZSShowHumanReadableText, IIF(m.ShowHumanReadableText, 1, 0))
 	ENDPROC
 
 	**** Font Size **** Unused
@@ -828,6 +830,21 @@ DEFINE CLASS ZintBarcode AS Custom
 		WriteInt(This.Symbol + This.ZStructure.ZSECI, m.ECI)
 	ENDPROC
 
+	**** Dots per mm
+	PROCEDURE GetDotsPerMM () AS Float
+		SAFETHIS
+
+		RETURN IIF(ISNULL(This.ZStructure.ZSDotsPerMM), 0.0, ReadFloat(This.Symbol + This.ZStructure.ZSDotsPerMM))
+	ENDPROC
+
+	PROCEDURE SetDotsPerMM (DotsPerMM AS Float)
+		SAFETHIS
+
+		IF !ISNULL(This.ZStructure.ZSDotsPerMM)
+			WriteFloat(This.Symbol + This.ZStructure.ZSDotsPerMM, m.DotsPerMM)
+		ENDIF
+	ENDPROC
+
 	**** Dot Size
 	PROCEDURE GetDotSize () AS Float
 		SAFETHIS
@@ -838,7 +855,7 @@ DEFINE CLASS ZintBarcode AS Custom
 	PROCEDURE SetDotSize (DotSize AS Float)
 		SAFETHIS
 
-		RETURN WriteFloat(This.Symbol + This.ZStructure.ZSDotSize, m.DotSize)
+		WriteFloat(This.Symbol + This.ZStructure.ZSDotSize, m.DotSize)
 	ENDPROC
 
 	**** Guard descent
@@ -990,9 +1007,9 @@ DEFINE CLASS ZintStructure AS Custom
 	ZSFontSize = .NULL.
 	ZSInputMode = .NULL.
 	ZSECI = .NULL.
+	ZSDotsPerMM = .NULL.
 	ZSDotSize = .NULL.
 	ZSGuardDescent = .NULL.
-	ZSDotsPerMM = .NULL.
 	ZSText = .NULL.
 	ZSTextLen = .NULL.
 	ZSRows = .NULL.
@@ -1008,7 +1025,6 @@ DEFINE CLASS ZintStructure AS Custom
 	ZSBitmapHeight = .NULL.
 	ZSAlphamapPointer = .NULL.
 	ZSBitmapByteLength = .NULL.
-	ZSDotSize = .NULL.
 	ZSVectorPointer = .NULL.
 	ZSDebug = .NULL.
 	ZSWarnLevel = .NULL.
@@ -1036,15 +1052,12 @@ DEFINE CLASS ZintStructure AS Custom
 		This.ZSBorderWidth = m.Offset + 16
 		This.ZSOutputOptions = m.Offset + 20
 		This.ZSFGColour = m.Offset + 24
-		* there seems to be a discrepancy between the zint.dll 2.12 symbol structure
-		* and its definition in zint.h
-		* fgcolour and bgcolour are defined as char[16], but built as char[10], as in previous versions
-		* commented, for the time being
-*!*			IF m.NVersion >= 2.12
+		* after 2.12, color may be specified as CMYK
+*!*			IF m.NVersion > 2.12
 *!*				m.Offset = m.Offset + 6		&& color info size increased by 6
 *!*			ENDIF
 		This.ZSBGColour = m.Offset + 34
-*!*			IF m.NVersion >= 2.12
+*!*			IF m.NVersion > 2.12
 *!*				m.Offset = m.Offset + 6		&& color info size increased by 6
 *!*			ENDIF
 		This.ZSOutfile = m.Offset + 52
@@ -1071,10 +1084,10 @@ DEFINE CLASS ZintStructure AS Custom
 			ENDIF
 			This.ZSDotSize = m.Offset + 340
 			This.ZSGuardDescent = m.Offset + 344
-			m.Offset = m.Offset + 48		&& skip these + structapp
+			m.Offset = m.Offset + 48			&& skip these + structapp
 			This.ZSWarnLevel = m.Offset + 340
-			This.ZSDebug = m.Offset + 348
-			m.Offset = m.Offset + 8
+			This.ZSDebug = m.Offset + 344
+			m.Offset = m.Offset + 8				&& skip warning level and debug, these were moved upwards
 		ELSE
 			This.ZSDotSize = m.Offset + 30124
 			This.ZSWarnLevel = m.Offset + 30136
@@ -1083,8 +1096,8 @@ DEFINE CLASS ZintStructure AS Custom
 
 		This.ZSText = m.Offset + 340
 		This.ZSTextLen = 128
-		This.ZSRows = m.Offset + 348
-		This.ZSWidth = m.Offset + 352
+		This.ZSRows = m.Offset + 468
+		This.ZSWidth = m.Offset + 472
 
 		IF m.NVersion < 2.11
 			This.ZSEncodedDataLen = 200 * 143

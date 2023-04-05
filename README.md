@@ -18,9 +18,9 @@ In particular, **zintBarcode** implements the following **Zint** API methods:
 
 See [zintBarcode Classes](docs/classes.md "Classes") for further documentation.
 
-The **Zint** API is discussed in the [Section 5](https://www.zint.org.uk/manual-05.php "Using the API") of the manual. The settings that control the generation process are described in point 5.6.
+The **Zint** API is discussed in the [Section 5](https://zint.org.uk/manual/chapter/5 "Using the API") of the manual. The settings that control the generation process are described in point 5.6.
 
-A description of the available symbologies and specific settings for them is presented in [Section 6](https://www.zint.org.uk/manual-06-01.php "Symbologies").
+A description of the available symbologies and specific settings for them is presented in [Section 6](https://zint.org.uk/manual/chapter/6 "Symbologies").
 
 Additionally, **zintBarcode** implements a high-level method that returns the name of a barcode image file. The name can be used as a Picture or Control Source in VFP reports and forms. See the demo section below, for an example of both scenarios.
 
