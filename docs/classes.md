@@ -86,6 +86,19 @@ The name of the file is the one stored in the `Outfile` Zint property.
 
 Returns an error condition (0 = no error).
 
+----------
+
+#### GetLastResult () AS Integer
+
+Returns last result of an encoding or saving operation (enumerated as ZINT_WARN_* or ZINT_ERROR_*).
+
+----------
+
+#### GetGeneratedStatus () AS Logical
+
+Returns generated status: true if a symbol was generated (even if a warning has been issued).
+
+
 ### Configuration methods
 
 In alphabetical order. All properties have a Get method (for instance, `GetWhitespaceWidth()`). The input properties also have Set methods (for instance, `SetOption()`). Additional properties - that is, not Zint properties - are italicized.

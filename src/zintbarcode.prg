@@ -8,8 +8,9 @@
 *
 *
 
-#DEFINE	SAFETHIS		ASSERT !USED("This") AND TYPE("This") == "O"
-#DEFINE	ZBVFPSIG		"~zbvfp_"
+#DEFINE	SAFETHIS			ASSERT !USED("This") AND TYPE("This") == "O"
+#DEFINE	ZBVFPSIG			"~zbvfp_"
+#DEFINE	ZINT_WARNINGS	4
 
 * install the classes
 SET PROCEDURE TO (SYS(16)) ADDITIVE
@@ -29,7 +30,7 @@ DEFINE CLASS ZintBarcode AS Custom
 	* manage storage
 	ADD OBJECT PROTECTED ImageFiles AS Collection
 
-	PROTECTED Symbol, ZVersion, TempFolder, OwnFolder, SingleFile
+	PROTECTED Symbol, ZStructure, ZVersion, ZResult, TempFolder, OwnFolder, SingleFile
 	PROTECTED OverlayImage, OverlayPosition, OverlayWidth, OverlayHeight, OverlayMargin, OverlayIsometric
 
 	* the address of the Zint symbol structure
@@ -38,6 +39,8 @@ DEFINE CLASS ZintBarcode AS Custom
 	ZStructure = .NULL.
 	* the version of Zint library
 	ZVersion = 0
+	* the result of the last Zint operation
+	ZResult = -1
 	* location of temporary images (used to set the ControlSource of controls in forms and reports)
 	TempFolder = ""
 	OwnFolder = .F.
@@ -52,6 +55,8 @@ DEFINE CLASS ZintBarcode AS Custom
 
 	_MemberData = '<VFPData>' + ;
 						'<memberdata name="getversion" type="method" display="GetVersion" />' + ;
+						'<memberdata name="getlastresult" type="method" display="GetLastResult" />' + ;
+						'<memberdata name="getgeneratedstatus" type="method" display="GetGeneratedStatus" />' + ;
 						'<memberdata name="encodesave" type="method" display="EncodeSave" />' + ;
 						'<memberdata name="encode" type="method" display="Encode" />' + ;
 						'<memberdata name="save" type="method" display="Save" />' + ;
@@ -199,6 +204,16 @@ DEFINE CLASS ZintBarcode AS Custom
 
 	ENDPROC
 
+	* returns last result of an encoding / saving operation
+	PROCEDURE GetLastResult () AS Integer
+		RETURN This.ZResult
+	ENDPROC
+
+	* returns generated status
+	PROCEDURE GetGeneratedStatus () AS Logical
+		RETURN BETWEEN(This.ZResult, 0, ZINT_WARNINGS)
+	ENDPROC
+
 	* prepare and save a barcode to a file, at a given angle (0-90-180-270)
 	PROCEDURE EncodeSave (InputData AS String, Filename AS String, Angle AS Integer) AS Integer
 
@@ -210,14 +225,12 @@ DEFINE CLASS ZintBarcode AS Custom
 			This.SetOutfile(m.Filename)
 		ENDIF
 
-		LOCAL ZBResult AS Integer
-
-		m.ZBResult = ZBarcode_Encode_And_Print(This.Symbol, m.InputData, LEN(m.InputData), EVL(m.Angle, 0))
-		IF m.ZBResult = 0 AND IIF(VARTYPE(This.OverlayImage) == "C", !EMPTY(This.OverlayImage), !ISNULL(This.OverlayImage))
+		This.ZResult = ZBarcode_Encode_And_Print(This.Symbol, m.InputData, LEN(m.InputData), EVL(m.Angle, 0))
+		IF This.ZResult <= ZINT_WARNINGS AND IIF(VARTYPE(This.OverlayImage) == "C", !EMPTY(This.OverlayImage), !ISNULL(This.OverlayImage))
 			This.PlaceOverlayImage()
 		ENDIF
 
-		RETURN m.ZBResult
+		RETURN This.ZResult
 
 	ENDPROC
 
@@ -229,7 +242,9 @@ DEFINE CLASS ZintBarcode AS Custom
 		IF PCOUNT() > 1 AND !EMPTY(m.Filename)
 			This.SetOutfile(m.Filename)
 		ENDIF
-		RETURN ZBarcode_Encode(This.Symbol, m.InputData, LEN(m.InputData))
+		This.ZResult = ZBarcode_Encode(This.Symbol, m.InputData, LEN(m.InputData))
+
+		RETURN This.ZResult
 
 	ENDPROC
 
@@ -238,7 +253,9 @@ DEFINE CLASS ZintBarcode AS Custom
 
 		SAFETHIS
 
-		RETURN ZBarcode_Print(This.Symbol, EVL(m.Angle, 0))
+		This.ZResult = ZBarcode_Print(This.Symbol, EVL(m.Angle, 0))
+
+		RETURN This.ZResult
 
 	ENDPROC
 
@@ -267,12 +284,12 @@ DEFINE CLASS ZintBarcode AS Custom
 		* have other settings dynamically prepared
 		This.DynamicSettings(m.InputData)
 
-		IF This.EncodeSave(m.InputData, m.Filename, m.Angle) == 0
+		IF This.EncodeSave(m.InputData, m.Filename, m.Angle) <= ZINT_WARNINGS
 			RETURN m.Filename
 			* the filename can be used as a ControlSource or Picture in controls
 		ELSE
 			RETURN ""
-			* error should be checked by .GetErrorText()
+			* error should be checked by .GetErrorText() or .GetLastResult()
 		ENDIF
 
 	ENDPROC
@@ -514,6 +531,7 @@ DEFINE CLASS ZintBarcode AS Custom
 		This.SetShowHumanReadableText(m.ZB.GetShowHumanReadableText())
 		This.SetInputMode(m.ZB.GetInputMode())
 		This.SetECI(m.ZB.GetECI())
+		This.SetDotsPerMM(m.ZB.GetDotsPerMM())
 		This.SetDotSize(m.ZB.GetDotSize())
 		This.SetGuardDescent(m.ZB.GetGuardDescent())
 

@@ -156,7 +156,7 @@ Overlay images may be used to add a logo to a barcode, or to comply with a requi
 
 Overlay images may be dropped on a barcode as they are, or resized to fit a specific width and height.
 
-In the demo, a report on the sessions of the May'21 Virtual Fox Fest produces QR codes with links to the sessions. Each QR code includes a photo of the speaker at its center.
+In the demo, a report on the sessions of the Virtual Fox Fest produces QR codes with links to the sessions. Each QR code includes a photo of the speaker at its center.
 
 The code section that controls the overlay image:
 
@@ -189,7 +189,7 @@ ENDDEFINE
 
 The report:
 
-![VFPX projects](docs/vffsessions.png "Virtual Fox Fest Sessions")
+![Virtual Fox Fest sessions](docs/vffsessions.png "Virtual Fox Fest Sessions")
 
 To run the demo:
 
