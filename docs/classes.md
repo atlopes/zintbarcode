@@ -136,7 +136,7 @@ All Set methods have a single parameter of the indicated type, except the `SetOp
 | *OverlayPosition* | • | • | C | Position of the overlay image: C, TL, TR, BL, BR (Center, Top, Bottom, Right, Left). |
 | *OverlayWidth* | • | • | I | In pixels. When the width and the height of an overlay area are set, the overlay image is resized to fit. |
 | Primary | • | • | C |  |
-| RowHeight |  | • | C | A binary string / buffer. |
+| RowHeight |  | • | N | `GetRowHeight` expects an index in the range 1-200. |
 | Rows |  | • | I |  |
 | Scale | • | • | N |  |
 | *SingleFile* | • | • | L | Used to indicate if a single temporary file is sufficient to store the barcodes required by the application. |

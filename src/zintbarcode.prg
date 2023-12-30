@@ -895,13 +895,13 @@ DEFINE CLASS ZintBarcode AS Custom
 	PROCEDURE GetOption (Option AS Integer) AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + (This.ZStructure.ZSOption - 4) + MIN((MAX(INT(m.Option), 1)), 3) * 4)
+		RETURN ReadInt(This.Symbol + This.ZStructure.ZSOption + (MIN((MAX(INT(m.Option), 1)), 3) - 1) * 4)
 	ENDPROC
 
 	PROCEDURE SetOption (Option AS Integer, OptionValue AS Integer) AS Integer
 		SAFETHIS
 
-		WriteInt(This.Symbol + (This.ZStructure.ZSOption - 4) + MIN((MAX(INT(m.Option), 1)), 3) * 4, m.OptionValue)
+		WriteInt(This.Symbol + This.ZStructure.ZSOption + (MIN((MAX(INT(m.Option), 1)), 3) - 1) * 4, m.OptionValue)
 	ENDPROC
 
 	**** Show Human Readable Text
@@ -1045,10 +1045,10 @@ DEFINE CLASS ZintBarcode AS Custom
 	ENDPROC
 
 	**** Row Height
-	PROCEDURE GetRowHeight () AS String
+	PROCEDURE GetRowHeight (RowIndex AS Integer) AS Float
 		SAFETHIS
 
-		RETURN ReadBytes(This.Symbol + This.ZStructure.ZSRowHeight, 800)	&& 200 * sizeof(float)
+		RETURN IIF(BETWEEN(m.RowIndex, 1, 200) AND m.RowIndex == INT(m.RowIndex), ReadFloat(This.Symbol + This.ZStructure.ZSRowHeight + (m.RowIndex - 1) * 4), .NULL.)
 	ENDPROC
 
 	**** Error Text
@@ -1175,117 +1175,76 @@ DEFINE CLASS ZintStructure AS Custom
 
 	PROCEDURE Init (ZintVersion AS String)
 
-		LOCAL Offset AS Integer
+		LOCAL ZS AS String
 		LOCAL NVersion AS Number
+		LOCAL ARRAY Members[1], Offsets[1]
+		LOCAL VersionIndex AS Integer
+		LOCAL Member AS Integer, Offset AS Integer
 
 		m.NVersion = VAL(CHRTRAN(m.ZintVersion, ".", SET("Point")))
 
-		This.ZSSymbology = 0
-		This.ZSHeight = 4
+		DO CASE
+		CASE m.NVersion == 2.10
+			m.VersionIndex = 2
+		CASE m.NVersion == 2.11
+			m.VersionIndex = 3
+		CASE m.NVersion == 2.12
+			m.VersionIndex = 4
+		CASE m.NVersion == 2.13
+			m.VersionIndex = 5
+		OTHERWISE
+			ERROR "Unsupported Zint version."
+			RETURN .NULL.
+		ENDCASE
 
-		IF m.NVersion < 2.11
-			This.ZSScale = 308
-			m.Offset = 0
-		ELSE
-			This.ZSScale = 8
-			m.Offset = 4		&& skip scale
-		ENDIF
+		TEXT TO m.ZS NOSHOW FLAGS 1 PRETEXT 3
+			Symbology,0,0,0,0
+			Height,4,4,4,4
+			WhitespaceWidth,8,12,12,12
+			WhitespaceHeight,12,16,16,16
+			BorderWidth,16,20,20,20
+			OutputOptions,20,24,24,24
+			FGColour,24,28,28,28
+			BGColour,34,38,38,44
+			Outfile,52,56,56,68
+			OutfileLen,256,256,256,256
+			Scale,308,8,8,8
+			Option,312,440,440,452
+			ShowHumanReadableText,324,452,452,464
+			FontSize,328,456,456,-
+			InputMode,332,460,460,468
+			ECI,336,464,464,472
+			DotsPerMM,-,-,468,476
+			DotSize,30124,468,472,480
+			TextGap,-,-,-,484
+			GuardDescent,-,472,476,488
+			Text,340,524,528,540
+			TextLen,128,128,128,200
+			Rows,468,652,656,740
+			Width,472,656,660,744
+			Primary,476,312,312,324
+			PrimaryLen,128,128,128,128
+			EncodedData,604,660,664,748
+			EncodedDataLen,28600,28800,28800,28800
+			RowHeight,29204,29460,29464,29548
+			ErrorText,30004,30260,30264,30348
+			BitmapPointer,30104,30260,30364,30448
+			BitmapWidth,30108,30264,30368,30452
+			BitmapHeight,30112,30268,30372,30456
+			AlphamapPointer,30116,30272,30376,30460
+			BitmapByteLength,30120,30276,30380,-
+			VectorPointer,30128,30380,30384,30464
+			Debug,30132,520,524,536
+			WarnLevel,30136,516,520,532
+		ENDTEXT
 
-		This.ZSWhitespaceWidth = m.Offset + 8
-		This.ZSWhitespaceHeight = m.Offset + 12
-		This.ZSBorderWidth = m.Offset + 16
-		This.ZSOutputOptions = m.Offset + 20
-		This.ZSFGColour = m.Offset + 24
-		* after 2.12, color may be specified as CMYK
-		IF m.NVersion > 2.12
-			m.Offset = m.Offset + 6		&& color info size increased by 6
-		ENDIF
-		This.ZSBGColour = m.Offset + 34
-		IF m.NVersion > 2.12
-			m.Offset = m.Offset + 6		&& color info size increased by 6
-		ENDIF
-		This.ZSOutfile = m.Offset + 52
-		This.ZSOutfileLen = 256
-
-		This.ZSPrimaryLen = 128
-		IF m.NVersion < 2.11
-			This.ZSPrimary = m.Offset + 476
-		ELSE
-			This.ZSPrimary = m.Offset + 308
-			m.Offset = m.Offset + 128 - 4		&& skip primary, get scale back
-		ENDIF
-
-		This.ZSOption = m.Offset + 312
-		This.ZSShowHumanReadableText = m.Offset + 324
-		IF m.NVersion < 2.13
-			This.ZSFontSize = m.Offset + 328
-		ELSE
-			m.Offset = m.Offset - 4				&& fontsize removed
-		ENDIF
-		This.ZSInputMode = m.Offset + 332
-		This.ZSECI = m.Offset + 336
-
-		IF m.NVersion >= 2.11
-			IF m.NVersion >= 2.12
-				This.ZSDotsPerMM = m.Offset + 340
-				m.Offset = m.Offset + 4			&& skip dpmm
+		FOR m.Member = 1 TO ALINES(m.Members, m.ZS)
+			ALINES(m.Offsets, m.Members[m.Member], 1, ",")
+			m.Offset = m.Offsets[m.VersionIndex]
+			IF ! m.Offset == "-"
+				STORE VAL(m.Offset) TO ("This.ZS" + m.Offsets[1])
 			ENDIF
-			This.ZSDotSize = m.Offset + 340
-			IF m.NVersion >= 2.13
-				This.ZSTextGap = m.Offset + 344
-				m.Offset = m.Offset + 4			&& skip text gap
-			ENDIF
-			This.ZSGuardDescent = m.Offset + 344
-			m.Offset = m.Offset + 48			&& skip these + structapp
-			This.ZSWarnLevel = m.Offset + 340
-			This.ZSDebug = m.Offset + 344
-			m.Offset = m.Offset + 8				&& skip warning level and debug, these were moved upwards
-		ELSE
-			This.ZSDotSize = m.Offset + 30124
-			This.ZSWarnLevel = m.Offset + 30136
-			This.ZSDebug = m.Offset + 30132
-		ENDIF
-
-		This.ZSText = m.Offset + 340
-		IF m.NVersion < 2.13
-			This.ZSTextLen = 128
-		ELSE
-			This.ZSTextLen = 200
-			m.Offset = m.Offset + 72			&& skip increase in text length
-		ENDIF
-		This.ZSRows = m.Offset + 468
-		This.ZSWidth = m.Offset + 472
-
-		IF m.NVersion < 2.11
-			This.ZSEncodedDataLen = 200 * 143
-		ELSE
-			This.ZSEncodedDataLen = 200 * 144
-			m.Offset = m.Offset - 128			&& get primary back
-		ENDIF
-
-		This.ZSEncodedData = m.Offset + 604
-
-		IF m.NVersion >= 2.11
-			m.Offset = m.Offset + 200			&& skip one row of encoded data
-		ENDIF
-
-		This.ZSRowHeight = m.Offset + 29204
-		This.ZSErrorText = m.Offset + 30004
-		This.ZSBitmapPointer = m.Offset + 30104
-		This.ZSBitmapWidth = m.Offset + 30108
-		This.ZSBitmapHeight = m.Offset + 30112
-		This.ZSAlphamapPointer = m.Offset + 30116
-		IF m.NVersion < 2.13
-			This.ZSBitmapByteLength = m.Offset + 30120
-		ELSE
-			m.Offset = m.Offset - 4			&& removed bitmap byte length
-		ENDIF
-
-		IF m.NVersion >= 2.11
-			m.Offset = m.Offset - 4			&& get back dot size
-		ENDIF
-
-		This.ZSVectorPointer = m.Offset + 30128
+		ENDFOR
 
 	ENDPROC
 

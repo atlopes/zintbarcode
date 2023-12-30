@@ -2,7 +2,7 @@
 ## Introduction
 **zintBarcode** provides a VFP connector to the [**Zint Barcode Generator**](https://www.zint.org.uk/ "Zint Home") library.
 
-**Zint** is an open source project that implements 1D and 2D barcode symbologies. The VFP connector uses the `zint.dll` library to access the **Zint** API, and it's compatible with versions 2.10 to 2.12 (the last one, at the time of writing).
+**Zint** is an open source project that implements 1D and 2D barcode symbologies. The VFP connector uses the `zint.dll` library to access the **Zint** API, and it's compatible with versions 2.10 to 2.13 (the last one, at the time of writing).
 
 Developers should refer to the **Zint** documentation for a presentation on the library (Read The [Fine Manual](https://zint.org.uk/manual/ "Fine manual")).
 
