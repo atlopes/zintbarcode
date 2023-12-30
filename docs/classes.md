@@ -54,6 +54,18 @@ Returns an error condition (0 = no error).
 
 ----------
 
+#### GetGeneratedStatus () AS Logical
+
+Returns generated status: true if a symbol was generated (even if a warning has been issued).
+
+----------
+
+#### GetLastResult () AS Integer
+
+Returns last result of an encoding or saving operation (enumerated as ZINT_WARN_* or ZINT_ERROR_*).
+
+----------
+
 #### ImageFile (InputData AS String[, ImageFormat AS String[, Angle AS Integer]]) AS String
 
 Encodes and saves a barcode to a temporary file, managed by the ZintBarcode class. Upon successful release of the ZintBarcode object, all temporary files are deleted.
@@ -86,48 +98,37 @@ The name of the file is the one stored in the `Outfile` Zint property.
 
 Returns an error condition (0 = no error).
 
-----------
-
-#### GetLastResult () AS Integer
-
-Returns last result of an encoding or saving operation (enumerated as ZINT_WARN_* or ZINT_ERROR_*).
-
-----------
-
-#### GetGeneratedStatus () AS Logical
-
-Returns generated status: true if a symbol was generated (even if a warning has been issued).
-
 
 ### Configuration methods
 
 In alphabetical order. All properties have a Get method (for instance, `GetWhitespaceWidth()`). The input properties also have Set methods (for instance, `SetOption()`). Additional properties - that is, not Zint properties - are italicized.
 
-All Set methods have a single parameter of the indicated type, except the `SetOption()` method.
+All Set methods have a single parameter of the indicated type, except the `SetOption()`, `*BGColour()`, and `*FGColour()` methods.
 
 | Property | Set | Get | Type | Obs |
 |--|--|--|--|--|
 | AlphamapPointer |  | • | I |  |
-| BGColour | • | • | I | Translated as VFP color values. |
+| BGColour | • | • | I/C | Translated as VFP color values or as a CMYK set. An additional optional parameter indicates if RGB use is forced, regardless of the CmyModel setting. |
 | BitmapByteLength |  | • | I |  |
 | BitmapHeight |  | • | I |  |
 | BitmapPointer |  | • | I |  |
 | BitmapWidth |  | • | I |  |
 | BorderWidth | • | • | I |  |
+| *CmykModel* | • | • | I | 0 = RGB only; 1 = CMYK stored in properties, RGB as parameters or results of color functions; 2 = CMYK only. |
 | Debug | • | • | I |  |
 | DotSize | • | • | N |  |
 | DotsPerMM | • | • | N |  |
 | ECI | • | • | I |  |
 | EncodedData |  | • | C |  |
 | ErrorText |  | • | C |  |
-| FGColour | • | • | I | Translated as VFP color values. |
+| FGColour | • | • | I/C | Translated as VFP color values or as a CMYK set. An additional optional parameter indicates if RGB use is forced, regardless of the CmyModel setting. |
 | FontSize | • | • | I | Unused. |
 | GuardDescent | • | • | N |  |
 | Height | • | • | N |  |
 | InputMode | • | • | I |  |
 | Option | • | • | I | Index of option (1-3) is indicated in the first parameter. |
 | OutputOptions | • | • | I |  |
-| Outfile | • | • | C | Max. 254 length. |
+| Outfile | • | • | C | Max. 254 length. Beginning at Zint version 2.13, filename is stored in UTF-8. |
 | *Overlay* | • | • | C/O | Overlay image. A filename, or an Image object. |
 | *OverlayHeight* | • | • | I | In pixels. When the height and the width of an overlay area are set, the overlay image is resized to fit. |
 | *OverlayIsometric* | • | • | L | When `.T.`, a resized overlay image retains its proportions. Otherwise, the image resizes to the overlay width and height. |
@@ -142,6 +143,7 @@ All Set methods have a single parameter of the indicated type, except the `SetOp
 | ShowHumanReadableText | • | • | L |  |
 | Symbology | • | • | I |  |
 | Text |  | • | C |  |
+| TextGap | • | • | N |  |
 | VectorPointer |  | • | I |  |
 | WarnLevel | • | • | I |  |
 | WhitespaceHeight | • | • | I |  |

@@ -30,7 +30,7 @@ DEFINE CLASS ZintBarcode AS Custom
 	* manage storage
 	ADD OBJECT PROTECTED ImageFiles AS Collection
 
-	PROTECTED Symbol, ZStructure, ZVersion, ZResult, TempFolder, OwnFolder, SingleFile
+	PROTECTED Symbol, ZStructure, ZVersion, ZResult, TempFolder, OwnFolder, SingleFile, CmykModel
 	PROTECTED OverlayImage, OverlayPosition, OverlayWidth, OverlayHeight, OverlayMargin, OverlayIsometric
 
 	* the address of the Zint symbol structure
@@ -45,6 +45,8 @@ DEFINE CLASS ZintBarcode AS Custom
 	TempFolder = ""
 	OwnFolder = .F.
 	SingleFile = .F.
+	* set and get colors in CMYK model
+	CmykModel = 0
 	* overlay image and position
 	OverlayImage = ""
 	OverlayPosition = "C"
@@ -78,6 +80,8 @@ DEFINE CLASS ZintBarcode AS Custom
 						'<memberdata name="setoverlaymargin" type="method" display="SetOverlayMargin" />' + ;
 						'<memberdata name="getoverlayisometric" type="method" display="GetOverlayIsometric" />' + ;
 						'<memberdata name="setoverlayisometric" type="method" display="SetOverlayIsometric" />' + ;
+						'<memberdata name="getcmykmodel" type="method" display="GetCmykModel" />' + ;
+						'<memberdata name="setcmykmodel" type="method" display="SetCmykModel" />' + ;
 						'<memberdata name="getsymbology" type="method" display="GetSymbology" />' + ;
 						'<memberdata name="setsymbology" type="method" display="SetSymbology" />' + ;
 						'<memberdata name="getheight" type="method" display="GetHeight" />' + ;
@@ -114,6 +118,8 @@ DEFINE CLASS ZintBarcode AS Custom
 						'<memberdata name="setdotspermm" type="method" display="SetDotsPerMM" />' + ;
 						'<memberdata name="getdotsize" type="method" display="GetDotSize" />' + ;
 						'<memberdata name="setdotsize" type="method" display="SetDotSize" />' + ;
+						'<memberdata name="gettextgap" type="method" display="GetTextGap" />' + ;
+						'<memberdata name="settextgap" type="method" display="SetTextGap" />' + ;
 						'<memberdata name="getguarddescent" type="method" display="GetGuardDescent" />' + ;
 						'<memberdata name="setguarddescent" type="method" display="SetGuardDescent" />' + ;
 						'<memberdata name="gettext" type="method" display="GetText" />' + ;
@@ -444,7 +450,7 @@ DEFINE CLASS ZintBarcode AS Custom
 
 		* prepare an extended graphic canvas
 		m.ImgGraphic = _Screen.System.Drawing.Graphics.FromImage(m.ImgFinal)
-		m.ImgColor = _Screen.System.Drawing.Color.FromRGB(This.GetBGColour())
+		m.ImgColor = _Screen.System.Drawing.Color.FromRGB(This.GetBGColour(.T.))
 		m.ImgGraphic.Clear(m.ImgColor)
 
 		* place the base image at its calculated offset
@@ -499,6 +505,47 @@ DEFINE CLASS ZintBarcode AS Custom
 
 	ENDFUNC
 
+	* from CMYK to RGB color
+	HIDDEN FUNCTION CmykToRgb (CMYK AS String, DefaultRGB AS Integer) AS Integer
+
+		SAFETHIS
+
+		LOCAL Black AS Integer
+		LOCAL ARRAY CMYKParts[4]
+
+		IF ALINES(m.CMYKParts, m.CMYK, 1, ',') == 4
+			m.Black = (1 - VAL(m.CMYKParts[4]) / 100)
+			RETURN BITOR(BITAND(ROUND(255 * (1 - VAL(m.CMYKParts[1]) / 100) * m.Black, 0), 0xFF), ;
+								BITLSHIFT(BITAND(ROUND(255 * (1 - VAL(m.CMYKParts[2]) / 100) * m.Black, 0), 0xFF), 8), ;
+								BITLSHIFT(BITAND(ROUND(255 * (1 - VAL(m.CMYKParts[3]) / 100) * m.Black, 0), 0xFF), 16))
+		ELSE
+			RETURN m.DefaultRGB
+		ENDIF
+
+	ENDFUNC
+
+	* from RGB to CMYK color
+	HIDDEN FUNCTION RgbToCmyk (RGBCode AS Integer) AS String
+
+		SAFETHIS
+
+		LOCAL Red AS Integer, Green AS Integer, Blue AS Integer, Black AS Integer
+
+		m.Red = BITAND(m.RGBCode, 0xFF) / 255
+		m.Green = BITAND(BITRSHIFT(m.RGBCode, 8), 0xFF) / 255
+		m.Blue = BITAND(BITRSHIFT(m.RGBCode, 16), 0xFF) / 255
+		m.Black = 1 - MAX(m.Red, m.Green, m.Blue)
+		IF m.Black == 1
+			RETURN "0,0,0,100"
+		ELSE
+			RETURN CHRTRAN(STR(ROUND((1 - m.Red - m.Black) / (1 - m.Black) * 100, 0)) + "," + ;
+						STR(ROUND((1 - m.Green - m.Black) / (1 - m.Black) * 100, 0)) + "," + ;
+						STR(ROUND((1 - m.Blue - m.Black) / (1 - m.Black) * 100, 0)) + "," + ;
+						STR(ROUND(m.Black * 100, 0)), " ", "")
+		ENDIF
+
+	ENDFUNC
+
 	* a placeholder for dynamic settings (subclass ZintBarcode to use this feature)
 	PROCEDURE DynamicSettings (InputData AS String)
 	ENDPROC
@@ -533,6 +580,7 @@ DEFINE CLASS ZintBarcode AS Custom
 		This.SetECI(m.ZB.GetECI())
 		This.SetDotsPerMM(m.ZB.GetDotsPerMM())
 		This.SetDotSize(m.ZB.GetDotSize())
+		This.SetTextGap(m.ZB.GetTextGap())
 		This.SetGuardDescent(m.ZB.GetGuardDescent())
 
 	ENDPROC			
@@ -560,6 +608,17 @@ DEFINE CLASS ZintBarcode AS Custom
 
 	PROCEDURE SetSingleFile (SingleFile AS Logical)
 		This.SingleFile = m.SingleFile
+	ENDPROC
+
+	* the CmykModel property determines if colors are transformed according to the CMYK model
+	PROCEDURE GetCmykModel () AS Integer
+		SAFETHIS
+
+		RETURN This.CmykModel
+	ENDPROC
+
+	PROCEDURE SetCmykModel (CmykModel AS Integer)
+		This.CmykModel = MAX(MIN(INT(m.CmykModel), IIF(This.ZVersion >= 21300, 2, 0)), 0)
 	ENDPROC
 
 	* an overlay image may be placed over the resulting barcode at the center or at one of the barcode corners
@@ -723,49 +782,98 @@ DEFINE CLASS ZintBarcode AS Custom
 
 	* colors are translated back and forth to VFP's RGB() colors
 
-	*** Foreground Colour
-	PROCEDURE GetFGColour () AS Integer
+	* helper functions to get and set colours
+	HIDDEN FUNCTION GetColour (Member AS Integer, DefaultColor AS IntegerOrString, ForceRGB AS Logical) AS IntegerOrString
+
 		SAFETHIS
 
 		LOCAL HexString AS String
+		LOCAL ColorCode AS IntegerOrString
 
-		m.HexString = PADR(ReadCString(This.Symbol + This.ZStructure.ZSFGColour), 6, "0")
-		RETURN EVALUATE("0x" + RIGHT(m.HexString, 2) + SUBSTR(m.HexString, 3, 2) + LEFT(m.HexString, 2))
-	ENDPROC
+		DO CASE
+		CASE This.CmykModel == 1 AND ! m.ForceRGB
+			m.ColorCode = This.CmykToRgb(ReadCString(This.Symbol + m.Member), m.DefaultColor)
+		CASE This.CmykModel == 2 AND ! m.ForceRGB
+			m.ColorCode = ReadCString(This.Symbol + m.Member)
+		OTHERWISE
+			m.HexString = PADR(ReadCString(This.Symbol + m.Member), 6, "0")
+			TRY
+				m.ColorCode = EVALUATE("0x" + RIGHT(m.HexString, 2) + SUBSTR(m.HexString, 3, 2) + LEFT(m.HexString, 2))
+			CATCH
+				m.ColorCode = m.DefaultColor
+			ENDTRY
+		ENDCASE
 
-	PROCEDURE SetFGColour (FGColour AS Integer)
+		RETURN m.ColorCode
+
+	ENDFUNC
+
+	HIDDEN FUNCTION SetColour (Member as Integer, Colour AS IntegerOrString, ForceRGB AS Logical)
+
 		SAFETHIS
 
-		WriteCharArray(This.Symbol + This.ZStructure.ZSFGColour, SUBSTR(TRANSFORM(CTOBIN(BINTOC(m.FGColour, "S"), "4RS"), "@0"), 3, 6) + CHR(0))
+		DO CASE
+		CASE This.CmykModel == 1 AND ! m.ForceRGB
+			WriteCharArray(This.Symbol + m.Member, This.RgbToCmyk(m.Colour) + CHR(0))
+		CASE This.CmykModel == 2 AND ! m.ForceRGB
+			WriteCharArray(This.Symbol + m.Member, m.Colour + CHR(0))
+		OTHERWISE
+			WriteCharArray(This.Symbol + m.Member, SUBSTR(TRANSFORM(CTOBIN(BINTOC(m.Colour, "S"), "4RS"), "@0"), 3, 6) + CHR(0))
+		ENDCASE
+
+	ENDFUNC
+
+	*** Foreground Colour
+	PROCEDURE GetFGColour (ForceRGB AS Logical) AS IntegerOrString
+
+		RETURN This.GetColour(This.ZStructure.ZSFGColour, RGB(0, 0, 0), m.ForceRGB)
+
+	ENDPROC
+
+	PROCEDURE SetFGColour (FGColour AS IntegerOrString, ForceRGB AS Logical)
+		
+		This.SetColour(This.ZStructure.ZSFGColour, m.FGColour, m.ForceRGB)
+
 	ENDPROC
 
 	*** Background Colour
-	PROCEDURE GetBGColour () AS Integer
-		SAFETHIS
+	PROCEDURE GetBGColour (ForceRGB AS Logical) AS IntegerOrString
 
-		LOCAL HexString AS String
+		RETURN This.GetColour(This.ZStructure.ZSBGColour, RGB(255, 255, 255), m.ForceRGB)
 
-		m.HexString = PADR(ReadCString(This.Symbol + This.ZStructure.ZSBGColour), 6, "0")
-		RETURN EVALUATE("0x" + RIGHT(m.HexString, 2) + SUBSTR(m.HexString, 3, 2) + LEFT(m.HexString, 2))
 	ENDPROC
 
-	PROCEDURE SetBGColour (BGColour AS Integer)
-		SAFETHIS
+	PROCEDURE SetBGColour (BGColour AS IntegerOrString, ForceRGB AS Logical)
 
-		WriteCharArray(This.Symbol + This.ZStructure.ZSBGColour, SUBSTR(TRANSFORM(CTOBIN(BINTOC(m.BGColour, "S"), "4RS"), "@0"), 3, 6) + CHR(0))
+		This.SetColour(This.ZStructure.ZSBGColour, m.BGColour, m.ForceRGB)
+
 	ENDPROC
 
 	**** Out File
 	PROCEDURE GetOutfile () AS String
 		SAFETHIS
 
-		RETURN ReadCString(This.Symbol + This.ZStructure.ZSOutfile)
+		LOCAL OutFile AS String
+
+		m.OutFile = ReadCString(This.Symbol + This.ZStructure.ZSOutfile)
+		IF This.ZVersion >= 21300
+			m.OutFile = STRCONV(m.OutFile, 11)
+		ENDIF
+
+		RETURN m.OutFile
 	ENDPROC
 
 	PROCEDURE SetOutfile (Outfile AS String)
 		SAFETHIS
 
-		WriteCharArray(This.Symbol + This.ZStructure.ZSOutfile, PADR(m.Outfile, This.ZStructure.ZSOutfileLen - 1, CHR(0)))
+		LOCAL Transformed AS String
+		IF This.ZVersion >= 21300
+			m.Transformed = STRCONV(m.Outfile, 9)
+		ELSE
+			m.Transformed = m.Outfile
+		ENDIF
+
+		WriteCharArray(This.Symbol + This.ZStructure.ZSOutfile, PADR(m.Transformed, This.ZStructure.ZSOutfileLen - 1, CHR(0)))
 	ENDPROC
 
 	**** Primary message data
@@ -813,13 +921,15 @@ DEFINE CLASS ZintBarcode AS Custom
 	PROCEDURE GetFontSize () AS Integer
 		SAFETHIS
 
-		RETURN ReadInt(This.Symbol + This.ZStructure.ZSFontSize)
+		RETURN IIF(ISNULL(This.ZStructure.ZSFontSize), 0, ReadInt(This.Symbol + This.ZStructure.ZSFontSize))
 	ENDPROC
 
 	PROCEDURE SetFontSize (FontSize AS Integer)
 		SAFETHIS
 
-		WriteInt(This.Symbol + This.ZStructure.ZSFontSize, m.FontSize)
+		IF ! ISNULL(This.ZStructure.ZSFontSize)
+			WriteInt(This.Symbol + This.ZStructure.ZSFontSize, m.FontSize)
+		ENDIF
 	ENDPROC
 
 	**** Input Mode
@@ -874,6 +984,21 @@ DEFINE CLASS ZintBarcode AS Custom
 		SAFETHIS
 
 		WriteFloat(This.Symbol + This.ZStructure.ZSDotSize, m.DotSize)
+	ENDPROC
+
+	**** Text Gap
+	PROCEDURE GetTextGap () AS Float
+		SAFETHIS
+
+		RETURN IIF(ISNULL(This.ZSstructure.ZSTextGap), 0.0, ReadFloat(This.Symbol + This.ZStructure.ZSTextGap))
+	ENDPROC
+
+	PROCEDURE SetTextGap (TextGap AS Float)
+		SAFETHIS
+
+		IF ! ISNULL(This.ZSstructure.ZSTextGap)
+			WriteFloat(This.Symbol + This.ZStructure.ZSTextGap, m.TextGap)
+		ENDIF
 	ENDPROC
 
 	**** Guard descent
@@ -1027,6 +1152,7 @@ DEFINE CLASS ZintStructure AS Custom
 	ZSECI = .NULL.
 	ZSDotsPerMM = .NULL.
 	ZSDotSize = .NULL.
+	ZSTextGap = .NULL.
 	ZSGuardDescent = .NULL.
 	ZSText = .NULL.
 	ZSTextLen = .NULL.
@@ -1071,13 +1197,13 @@ DEFINE CLASS ZintStructure AS Custom
 		This.ZSOutputOptions = m.Offset + 20
 		This.ZSFGColour = m.Offset + 24
 		* after 2.12, color may be specified as CMYK
-*!*			IF m.NVersion > 2.12
-*!*				m.Offset = m.Offset + 6		&& color info size increased by 6
-*!*			ENDIF
+		IF m.NVersion > 2.12
+			m.Offset = m.Offset + 6		&& color info size increased by 6
+		ENDIF
 		This.ZSBGColour = m.Offset + 34
-*!*			IF m.NVersion > 2.12
-*!*				m.Offset = m.Offset + 6		&& color info size increased by 6
-*!*			ENDIF
+		IF m.NVersion > 2.12
+			m.Offset = m.Offset + 6		&& color info size increased by 6
+		ENDIF
 		This.ZSOutfile = m.Offset + 52
 		This.ZSOutfileLen = 256
 
@@ -1091,7 +1217,11 @@ DEFINE CLASS ZintStructure AS Custom
 
 		This.ZSOption = m.Offset + 312
 		This.ZSShowHumanReadableText = m.Offset + 324
-		This.ZSFontSize = m.Offset + 328
+		IF m.NVersion < 2.13
+			This.ZSFontSize = m.Offset + 328
+		ELSE
+			m.Offset = m.Offset - 4				&& fontsize removed
+		ENDIF
 		This.ZSInputMode = m.Offset + 332
 		This.ZSECI = m.Offset + 336
 
@@ -1101,6 +1231,10 @@ DEFINE CLASS ZintStructure AS Custom
 				m.Offset = m.Offset + 4			&& skip dpmm
 			ENDIF
 			This.ZSDotSize = m.Offset + 340
+			IF m.NVersion >= 2.13
+				This.ZSTextGap = m.Offset + 344
+				m.Offset = m.Offset + 4			&& skip text gap
+			ENDIF
 			This.ZSGuardDescent = m.Offset + 344
 			m.Offset = m.Offset + 48			&& skip these + structapp
 			This.ZSWarnLevel = m.Offset + 340
@@ -1113,7 +1247,12 @@ DEFINE CLASS ZintStructure AS Custom
 		ENDIF
 
 		This.ZSText = m.Offset + 340
-		This.ZSTextLen = 128
+		IF m.NVersion < 2.13
+			This.ZSTextLen = 128
+		ELSE
+			This.ZSTextLen = 200
+			m.Offset = m.Offset + 72			&& skip increase in text length
+		ENDIF
 		This.ZSRows = m.Offset + 468
 		This.ZSWidth = m.Offset + 472
 
@@ -1136,13 +1275,17 @@ DEFINE CLASS ZintStructure AS Custom
 		This.ZSBitmapWidth = m.Offset + 30108
 		This.ZSBitmapHeight = m.Offset + 30112
 		This.ZSAlphamapPointer = m.Offset + 30116
-		This.ZSBitmapByteLength = m.Offset + 30120
+		IF m.NVersion < 2.13
+			This.ZSBitmapByteLength = m.Offset + 30120
+		ELSE
+			m.Offset = m.Offset - 4			&& removed bitmap byte length
+		ENDIF
 
 		IF m.NVersion >= 2.11
 			m.Offset = m.Offset - 4			&& get back dot size
 		ENDIF
 
-		This.ZSVectorPointer = m.Offset + 30136
+		This.ZSVectorPointer = m.Offset + 30128
 
 	ENDPROC
 
@@ -1301,6 +1444,8 @@ DEFINE CLASS ZintEnumerations AS Custom
 	BARCODE_QUIET_ZONES = 2048
 	BARCODE_NO_QUIET_ZONES = 4096
 	COMPLIANT_HEIGHT = 8192
+	EANUPC_GUARD_WHITESPACE = 16384
+	EMBED_VECTOR_FONT = 32768
 
 && Input data types
 	DATA_MODE = 0
@@ -1311,10 +1456,12 @@ DEFINE CLASS ZintEnumerations AS Custom
 	GS1NOCHECK_MODE = 32
 	HEIGHTPERROW_MODE = 64
 	FAST_MODE = 128
+	EXTRA_ESCAPE_MODE = 256
 
 && Data Matrix specific options (option_3)
 	DM_SQUARE = 100
 	DM_DMRE = 101
+	DM_ISO_144 = 128
 
 && QR, Han Xin, Grid Matrix specific options (option_3)
 	ZINT_FULL_MULTIBYTE = 200
@@ -1337,6 +1484,7 @@ DEFINE CLASS ZintEnumerations AS Custom
 	ZINT_ERROR_FILE_WRITE = 12
 	ZINT_ERROR_USES_ECI = 13
 	ZINT_ERROR_NONCOMPLIANT = 14
+	ZINT_ERROR_HRT_TRUNCATED = 15
 
 && File types
 	OUT_BUFFER = 0

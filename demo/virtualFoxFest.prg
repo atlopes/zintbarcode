@@ -12,7 +12,7 @@ DO (JUSTPATH(SYS(16)) + "\..\src\zintbarcode.prg")
 LOCAL Server AS String
 LOCAL HTTP AS MSXML2.ServerXMLHTTP60
 
-m.Server = "https://virtualfoxfest.com/"
+m.Server = "https://virtualfoxfest.com/2023/"
 
 m.HTTP = CREATEOBJECT("MSXML2.ServerXMLHTTP.6.0")
 m.HTTP.Open("Get", m.Server + "speakers.aspx", .F.)
