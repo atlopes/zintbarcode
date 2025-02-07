@@ -308,6 +308,10 @@ DEFINE CLASS ZintBarcode AS Custom
 			RETURN
 		ENDIF
 
+		LOCAL Drawing AS xfcDrawing
+
+		m.Drawing = _Screen.System.Drawing
+
 		LOCAL RenderedBarcode AS String
 		LOCAL OutFileExtension AS String
 		LOCAL Encoder AS xfcImageFormat
@@ -317,13 +321,13 @@ DEFINE CLASS ZintBarcode AS Custom
 		m.OutFileExtension = UPPER(JUSTEXT(m.RenderedBarcode))
 		DO CASE
 		CASE m.OutFileExtension == "GIF"
-			m.Encoder = _Screen.System.Drawing.Imaging.ImageFormat.Gif
+			m.Encoder = m.Drawing.Imaging.ImageFormat.Gif
 		CASE m.OutFileExtension == "PNG"
-			m.Encoder = _Screen.System.Drawing.Imaging.ImageFormat.Png
+			m.Encoder = m.Drawing.Imaging.ImageFormat.Png
 		CASE m.OutFileExtension == "BMP"
-			m.Encoder = _Screen.System.Drawing.Imaging.ImageFormat.Bmp
+			m.Encoder = m.Drawing.Imaging.ImageFormat.Bmp
 		CASE m.OutFileExtension == "JPG"
-			m.Encoder = _Screen.System.Drawing.Imaging.ImageFormat.Jpeg
+			m.Encoder = m.Drawing.Imaging.ImageFormat.Jpeg
 		OTHERWISE
 			RETURN	&& if not supported, return the barcode without the overlaying
 		ENDCASE
@@ -356,14 +360,14 @@ DEFINE CLASS ZintBarcode AS Custom
 		LOCAL ExtraHeight AS Integer
 
 		* get the rendered barcode (it will be the base for the new image) and the overlay image
-		m.ImgBase = _Screen.System.Drawing.Image.FromFile(m.RenderedBarcode)
+		m.ImgBase = m.Drawing.Image.FromFile(m.RenderedBarcode)
 		DO CASE
 		CASE VARTYPE(This.OverlayImage) == "C"
-			m.ImgOverlay = _Screen.System.Drawing.Image.FromFile(This.OverlayImage)
+			m.ImgOverlay = m.Drawing.Image.FromFile(This.OverlayImage)
 		CASE !EMPTY(This.OverlayImage.PictureVal)
-			m.ImgOverlay = _Screen.System.Drawing.Image.FromVarbinary(This.OverlayImage.PictureVal)
+			m.ImgOverlay = m.Drawing.Image.FromVarbinary(This.OverlayImage.PictureVal)
 		OTHERWISE
-			m.ImgOverlay = _Screen.System.Drawing.Image.FromFile(This.OverlayImage.Picture)
+			m.ImgOverlay = m.Drawing.Image.FromFile(This.OverlayImage.Picture)
 		ENDCASE
 
 		* forget about overlaying if the overlay image can not be loaded into an object
@@ -446,25 +450,25 @@ DEFINE CLASS ZintBarcode AS Custom
 		ENDIF
 
 		* the new final image size
-		m.ImgFinal = _Screen.System.Drawing.Bitmap.New(m.ImgBase.Width + m.ExtraWidth, m.ImgBase.Height + m.ExtraHeight)
+		m.ImgFinal = m.Drawing.Bitmap.New(m.ImgBase.Width + m.ExtraWidth, m.ImgBase.Height + m.ExtraHeight)
 
 		* prepare an extended graphic canvas
-		m.ImgGraphic = _Screen.System.Drawing.Graphics.FromImage(m.ImgFinal)
-		m.ImgColor = _Screen.System.Drawing.Color.FromRGB(This.GetBGColour(.T.))
+		m.ImgGraphic = m.Drawing.Graphics.FromImage(m.ImgFinal)
+		m.ImgColor = m.Drawing.Color.FromRGB(This.GetBGColour(.T.))
 		m.ImgGraphic.Clear(m.ImgColor)
 
 		* place the base image at its calculated offset
-		m.RectBase = _Screen.System.Drawing.Rectangle.New(m.BaseOffsetX, m.BaseOffsetY, m.ImgBase.Width, m.ImgBase.Height)
+		m.RectBase = m.Drawing.Rectangle.New(m.BaseOffsetX, m.BaseOffsetY, m.ImgBase.Width, m.ImgBase.Height)
 		m.ImgGraphic.DrawImage(m.ImgBase, m.RectBase)
 
 		* place the overlay image at its calculated offset
 		IF !m.OvrBox
-			m.RectOverlay = _Screen.System.Drawing.Rectangle.New(m.OvrOffsetX, m.OvrOffsetY, m.OvrWidth, m.OvrHeight)
+			m.RectOverlay = m.Drawing.Rectangle.New(m.OvrOffsetX, m.OvrOffsetY, m.OvrWidth, m.OvrHeight)
 			m.ImgGraphic.DrawImage(m.ImgOverlay, m.RectOverlay)
 		ELSE
 
 			* in a box, start by clearing it
-			m.ImgGraphic.FillRectangle(_Screen.System.Drawing.SolidBrush.New(m.ImgColor), m.OvrOffsetX, m.OvrOffsetY, m.OvrWidth, m.OvrHeight)
+			m.ImgGraphic.FillRectangle(m.Drawing.SolidBrush.New(m.ImgColor), m.OvrOffsetX, m.OvrOffsetY, m.OvrWidth, m.OvrHeight)
 
 			* if needed, make room for a margin
 			m.OvrOffsetX = m.OvrOffsetX + This.OverlayMargin
@@ -490,9 +494,9 @@ DEFINE CLASS ZintBarcode AS Custom
 			ENDIF
 
 			* resize the image with the best quality possible
-			m.RectOverlay = _Screen.System.Drawing.Rectangle.New(m.OvrOffsetX, m.OvrOffsetY, m.OvrWidth, m.OvrHeight)
-			m.ImgGraphic.SmoothingMode = _Screen.System.Drawing.Drawing2d.SmoothingMode.Highquality
-			m.ImgGraphic.InterpolationMode = _Screen.System.Drawing.Drawing2d.Interpolationmode.Highqualitybicubic
+			m.RectOverlay = m.Drawing.Rectangle.New(m.OvrOffsetX, m.OvrOffsetY, m.OvrWidth, m.OvrHeight)
+			m.ImgGraphic.SmoothingMode = m.Drawing.Drawing2d.SmoothingMode.Highquality
+			m.ImgGraphic.InterpolationMode = m.Drawing.Drawing2d.Interpolationmode.Highqualitybicubic
 
 			* draw it
 			m.ImgGraphic.DrawImage(m.ImgOverlay, m.RectOverlay)
