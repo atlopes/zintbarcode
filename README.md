@@ -28,9 +28,9 @@ As an extension to the original library, **zintBarcode** supports the placement 
 
 ## Setup
 
-**zintBarcode** comes as a [single program file](src/zintbarcode.prg "ZintBarcode"), but depends on the **Zint** Dynamic Link Library, as well as on the **VFP2C32** Fox Link Library.
+**zintBarcode** comes as a [single program file](src/zintbarcode.prg "ZintBarcode"), but depends on the **Zint** Dynamic Link Library.
 
-Both should be downloaded from their sites ([**Zint**](https://sourceforge.net/projects/zint/ "Zint") project; [**VFP2C32**](https://github.com/ChristianEhlscheid/vfp2c32 "VFP2C32") project). For convenience, binary copies of both libraries are stored in this repository.
+It should be downloaded from the site of the ([**Zint**](https://sourceforge.net/projects/zint/ "Zint") project. For convenience, binary copies of supported versions of the library are stored in this repository.
 
 To overlay an image on the barcode, the [**GdiPlusX**](https://github.com/VFPX/GDIPlusX "GdiPlusX") library must be present in the application environment.
 
@@ -202,11 +202,11 @@ DO demo\virtualfoxfest.prg
 
 [Unlicensed](UNLICENSE.md "Unlicense").
 
-**Zint** is Copyright © 2023 Robin Stuart, distributed under a BSD license.
-
-**VFP2C32** by Christian Ehlscheid with collaboration of Eric Selje.
+**Zint** is Copyright © 2025 Robin Stuart, distributed under a BSD license.
 
 **GdiPlusX** by Bernard Bout (*project manager*) et al.
+
+Although ZintBarcode does not depend any more on the **VFP2C32** Fox Link Library, by Christian Ehlscheid, with the collaboration of Eric Selje, the appreciation and this acknowledgement remain.
 
 ## Status
 
