@@ -3,9 +3,9 @@
 
 **zintBarcode** comprises a functional class (named **ZintBarcode**) and three support classes (**ZintLibrary**, **ZintEnumerations**, and **ZintStructure**).
 
-**ZintLibrary** loads the required **Zint** and **VFP2C32** libraries into VFP. It's instantiated in the preamble code of `zintbarcode.prg`.
+**ZintLibrary** loads the required **Zint** library into VFP. It's instantiated in the preamble code of `zintbarcode.prg`.
 
-**ZintEnumerations** holds the different enumerations used by **Zint**, and may be used to make the code easier to read.
+**ZintEnumerations** holds the different enumerations used by **Zint**, and may be used to make the code easier to write and read.
 
 That is:
 
@@ -25,9 +25,9 @@ m.ZS.SetOption(3, 100)
 
 The production of a barcode is a three-step process:
 
-1. Configure the barcode (symbology, size, colors, and other Zint properties)
-1. Encode the barcode
-1. Save it to an image file
+1. Configure the barcode (symbology, size, colors, and other Zint properties);
+1. Encode the barcode;
+1. Save it to an image file or to a memory buffer.
 
 ### Functional methods
 
@@ -46,7 +46,7 @@ Returns an error condition (0 = no error).
 
 #### EncodeSave (InputData AS String[, Filename AS String[, Angle AS Integer]]) AS Integer
 
-Encodes a barcode according to some data, and saves it to a file (if no filename is given, the value of `Outfile` Zint property is used).
+Encodes a barcode according to some data, and saves it to a file or a memory buffer (if no filename is given, the value of `Outfile` Zint property is used when the output is not being sent to memory).
 
 The barcode can be rotated at a given angle (at 0, 90, 180, or 270 degrees).
 
@@ -126,6 +126,7 @@ All Set methods have a single parameter of the indicated type, except the `SetOp
 | GuardDescent | • | • | N |  |
 | Height | • | • | N |  |
 | InputMode | • | • | I |  |
+| MemFile |  | • | B | A blob set when the output options include the `BARCODE_MEMORY_FILE` flag. The result may be used directly as a value of the `PictureVal` property. Image overlaying is not yet compatible with images stored in memory. |
 | Option | • | • | I | Index of option (1-3) is indicated in the first parameter. |
 | OutputOptions | • | • | I |  |
 | Outfile | • | • | C | Max. 254 length. Beginning at Zint version 2.13, filename is stored in UTF-8. |

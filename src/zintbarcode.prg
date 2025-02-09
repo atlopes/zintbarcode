@@ -138,6 +138,7 @@ DEFINE CLASS ZintBarcode AS Custom
 						'<memberdata name="setdebug" type="method" display="SetDebug" />' + ;
 						'<memberdata name="getwarnlevel" type="method" display="GetWarnLevel" />' + ;
 						'<memberdata name="setwarnlevel" type="method" display="SetWarnLevel" />' + ;
+						'<memberdata name="getmemfile" type="method" display="GetMemFile" />' + ;
 						'</VFPData>'
 
 	PROCEDURE Init
@@ -227,7 +228,7 @@ DEFINE CLASS ZintBarcode AS Custom
 
 		ZBarcode_Clear(This.Symbol)
 
-		IF PCOUNT() > 1
+		IF PCOUNT() > 1 AND ! EMPTY(m.Filename)
 			This.SetOutfile(m.Filename)
 		ENDIF
 
@@ -1130,6 +1131,27 @@ DEFINE CLASS ZintBarcode AS Custom
 		This.WriteInt(This.Symbol + This.ZStructure.ZSWarnLevel, m.WarnLevel)
 	ENDPROC
 
+	**** Memory file
+	PROCEDURE GetMemFile () AS Blob
+		SAFETHIS
+
+		LOCAL MemFilePtr AS Integer
+		LOCAL MemFile AS Blob
+
+		m.MemFile = 0h
+
+		IF ! ISNULL(This.ZStructure.ZSMemFile)
+
+			m.MemFilePtr = This.ReadInt(This.Symbol + This.ZStructure.ZSMemFile)
+			IF m.MemFilePtr != 0
+				m.MemFile = This.ReadBytes(m.MemFilePtr, This.ReadInt(This.Symbol + This.ZStructure.ZSMemFileSize))
+			ENDIF
+
+		ENDIF
+
+		RETURN m.MemFile
+	ENDPROC
+
 	* auxiliary functions to peek and poke memory
 	HIDDEN FUNCTION ReadInt (MemoryLocation AS Integer) AS Integer
 		RETURN CTOBIN(SYS(2600, m.MemoryLocation, 4), "4RS")
@@ -1223,6 +1245,8 @@ DEFINE CLASS ZintStructure AS Custom
 	ZSVectorPointer = .NULL.
 	ZSDebug = .NULL.
 	ZSWarnLevel = .NULL.
+	ZSMemFile = .NULL.
+	ZSMemFileSize = .NULL.
 
 	PROCEDURE Init (ZintVersion AS String)
 
@@ -1243,50 +1267,54 @@ DEFINE CLASS ZintStructure AS Custom
 			m.VersionIndex = 4
 		CASE m.NVersion == 2.13
 			m.VersionIndex = 5
+		CASE m.NVersion == 2.14
+			m.VersionIndex = 6
 		OTHERWISE
 			ERROR "Unsupported Zint version."
 			RETURN .NULL.
 		ENDCASE
 
 		TEXT TO m.ZS NOSHOW FLAGS 1 PRETEXT 3
-			Symbology,0,0,0,0
-			Height,4,4,4,4
-			WhitespaceWidth,8,12,12,12
-			WhitespaceHeight,12,16,16,16
-			BorderWidth,16,20,20,20
-			OutputOptions,20,24,24,24
-			FGColour,24,28,28,28
-			BGColour,34,38,38,44
-			Outfile,52,56,56,68
-			OutfileLen,256,256,256,256
-			Scale,308,8,8,8
-			Option,312,440,440,452
-			ShowHumanReadableText,324,452,452,464
-			FontSize,328,456,456,-
-			InputMode,332,460,460,468
-			ECI,336,464,464,472
-			DotsPerMM,-,-,468,476
-			DotSize,30124,468,472,480
-			TextGap,-,-,-,484
-			GuardDescent,-,472,476,488
-			Text,340,524,528,540
-			TextLen,128,128,128,200
-			Rows,468,652,656,740
-			Width,472,656,660,744
-			Primary,476,312,312,324
-			PrimaryLen,128,128,128,128
-			EncodedData,604,660,664,748
-			EncodedDataLen,28600,28800,28800,28800
-			RowHeight,29204,29460,29464,29548
-			ErrorText,30004,30260,30264,30348
-			BitmapPointer,30104,30260,30364,30448
-			BitmapWidth,30108,30264,30368,30452
-			BitmapHeight,30112,30268,30372,30456
-			AlphamapPointer,30116,30272,30376,30460
-			BitmapByteLength,30120,30276,30380,-
-			VectorPointer,30128,30380,30384,30464
-			Debug,30132,520,524,536
-			WarnLevel,30136,516,520,532
+			Symbology,0,0,0,0,0
+			Height,4,4,4,4,4
+			WhitespaceWidth,8,12,12,12,12
+			WhitespaceHeight,12,16,16,16,16
+			BorderWidth,16,20,20,20,20
+			OutputOptions,20,24,24,24,24
+			FGColour,24,28,28,28,28
+			BGColour,34,38,38,44,44
+			Outfile,52,56,56,68,68
+			OutfileLen,256,256,256,256,256
+			Scale,308,8,8,8,8
+			Option,312,440,440,452,452
+			ShowHumanReadableText,324,452,452,464,464
+			FontSize,328,456,456,-,-
+			InputMode,332,460,460,468,468
+			ECI,336,464,464,472,472
+			DotsPerMM,-,-,468,476,476
+			DotSize,30124,468,472,480,480
+			TextGap,-,-,-,484,484
+			GuardDescent,-,472,476,488,488
+			Text,340,524,528,540,540
+			TextLen,128,128,128,200,256
+			Rows,468,652,656,740,796
+			Width,472,656,660,744,800
+			Primary,476,312,312,324,324
+			PrimaryLen,128,128,128,128,128
+			EncodedData,604,660,664,748,804
+			EncodedDataLen,28600,28800,28800,28800,28800
+			RowHeight,29204,29460,29464,29548,29604
+			ErrorText,30004,30260,30264,30348,30404
+			BitmapPointer,30104,30260,30364,30448,30504
+			BitmapWidth,30108,30264,30368,30452,30508
+			BitmapHeight,30112,30268,30372,30456,30512
+			AlphamapPointer,30116,30272,30376,30460,30516
+			BitmapByteLength,30120,30276,30380,-,-
+			VectorPointer,30128,30380,30384,30464,30520
+			Debug,30132,520,524,536,536
+			WarnLevel,30136,516,520,532,532
+			MemFile,-,-,-,-,30524
+			MemFileSize,-,-,-,-,30528
 		ENDTEXT
 
 		FOR m.Member = 1 TO ALINES(m.Members, m.ZS)
@@ -1356,7 +1384,8 @@ DEFINE CLASS ZintEnumerations AS Custom
 	BARCODE_PDF417TRUNC = 56 && Legacy
 	BARCODE_MAXICODE = 57
 	BARCODE_QRCODE = 58
-	BARCODE_CODE128B = 60
+	BARCODE_CODE128AB = 60
+	BARCODE_CODE128B = 60 && Legacy
 	BARCODE_AUSPOST = 63
 	BARCODE_AUSREPLY = 66
 	BARCODE_AUSROUTE = 67
@@ -1438,6 +1467,7 @@ DEFINE CLASS ZintEnumerations AS Custom
 	BARCODE_ULTRA = 144
 	BARCODE_RMQR = 145
 	BARCODE_BC412 = 146
+	BARCODE_DXFILMEDGE = 147
 
 && Output options
 	BARCODE_BIND_TOP = 1
@@ -1456,6 +1486,7 @@ DEFINE CLASS ZintEnumerations AS Custom
 	COMPLIANT_HEIGHT = 8192
 	EANUPC_GUARD_WHITESPACE = 16384
 	EMBED_VECTOR_FONT = 32768
+	BARCODE_MEMORY_FILE = 65536
 
 && Input data types
 	DATA_MODE = 0
@@ -1480,6 +1511,7 @@ DEFINE CLASS ZintEnumerations AS Custom
 	ULTRA_COMPRESSION = 128
 
 && Warning and error conditions
+	ZINT_WARN_HRT_TRUNCATED = 1
 	ZINT_WARN_INVALID_OPTION = 2
 	ZINT_WARN_USES_ECI = 3
 	ZINT_WARN_NONCOMPLIANT = 4
