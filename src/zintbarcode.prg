@@ -15,7 +15,7 @@
 * install the classes
 SET PROCEDURE TO (SYS(16)) ADDITIVE
 
-* and the dependencies (Zint and Vfp2C32 libraries)
+* and path to dependencies
 SET PATH TO (ADDBS(JUSTPATH(SYS(16))) + "external") ADDITIVE
 
 * instantiate the library and we're ready to go
@@ -30,7 +30,7 @@ DEFINE CLASS ZintBarcode AS Custom
 	* manage storage
 	ADD OBJECT PROTECTED ImageFiles AS Collection
 
-	PROTECTED Symbol, ZStructure, ZVersion, ZResult, TempFolder, OwnFolder, SingleFile, CmykModel
+	PROTECTED Symbol, ZStructure, ZVersion, ZResult, TempFolder, OwnFolder, SingleFile, CmykModel, DefaultImageFormat
 	PROTECTED OverlayImage, OverlayPosition, OverlayWidth, OverlayHeight, OverlayMargin, OverlayIsometric
 
 	* the address of the Zint symbol structure
@@ -54,6 +54,8 @@ DEFINE CLASS ZintBarcode AS Custom
 	OverlayHeight = 0
 	OverlayMargin = 0
 	OverlayIsometric = .T.
+	* default image format (by extension)
+	DefaultImageFormat = "gif"
 
 	_MemberData = '<VFPData>' + ;
 						'<memberdata name="getversion" type="method" display="GetVersion" />' + ;
@@ -68,6 +70,8 @@ DEFINE CLASS ZintBarcode AS Custom
 						'<memberdata name="issupported" type="method" display="IsSupported" />' + ;
 						'<memberdata name="getsinglefile" type="method" display="GetSingleFile" />' + ;
 						'<memberdata name="setsinglefile" type="method" display="SetSingleFile" />' + ;
+						'<memberdata name="getdefaultimageformat" type="method" display="GetDefaultImageFormat" />' + ;
+						'<memberdata name="setdefaultimageformat" type="method" display="SetDefaultImageFormat" />' + ;
 						'<memberdata name="getoverlay" type="method" display="GetOverlay" />' + ;
 						'<memberdata name="setoverlay" type="method" display="SetOverlay" />' + ;
 						'<memberdata name="getoverlayposition" type="method" display="GetOverlayPosition" />' + ;
@@ -276,7 +280,7 @@ DEFINE CLASS ZintBarcode AS Custom
 		LOCAL Extension AS String
 		LOCAL ARRAY CheckFile(1)
 
-		m.Extension = EVL(m.ImageFormat, "gif")
+		m.Extension = EVL(m.ImageFormat, This.DefaultImageFormat)
 
 		IF This.SingleFile AND This.ImageFiles.Count > 0
 			m.Filename = This.ImageFiles(1)
@@ -613,6 +617,17 @@ DEFINE CLASS ZintBarcode AS Custom
 
 	PROCEDURE SetSingleFile (SingleFile AS Logical)
 		This.SingleFile = m.SingleFile
+	ENDPROC
+
+	* the DefaultImageFormat property holds the default image format when not specified in methods' parameters
+	FUNCTION GetDefaultImageFormat () AS String
+		SAFETHIS
+
+		RETURN This.DefaultImageFormat
+	ENDFUNC
+
+	PROCEDURE SetDefaultImageFormat (DefaultImageFormat AS String)
+		This.DefaultImageFormat = m.DefaultImageFormat
 	ENDPROC
 
 	* the CmykModel property determines if colors are transformed according to the CMYK model

@@ -5,10 +5,13 @@ DO (JUSTPATH(SYS(16)) + "\..\src\zintbarcode.prg")
 * b) fetch the data from VFPX site
 
 LOCAL HTTP AS MSXML2.ServerXMLHTTP60
+LOCAL Source AS String
 
 m.HTTP = CREATEOBJECT("MSXML2.ServerXMLHTTP.6.0")
 m.HTTP.Open("Get", "https://vfpx.github.io/projects/", .F.)
 m.HTTP.Send()
+
+m.Source = STRTRAN(STRTRAN(STREXTRACT("" + m.HTTP.ResponseBody, "<tbody>", "</tbody>", 1, 4), "&" + "nbsp;", " "), "&" + "check;", "X")
 
 * c) create a cursor to hold the information
 
@@ -26,7 +29,7 @@ LOCAL VFPX AS Object
 
 m.XML = CREATEOBJECT("MSXML2.DOMDocument.6.0")
 m.XML.Async = .F.
-m.XML.LoadXML(STREXTRACT("" + m.HTTP.ResponseBody, "<tbody>", "</tbody>", 1, 4))
+m.XML.LoadXML(m.Source)
 
 * each project in its row
 m.TRowList = m.XML.selectnodes("tbody/tr")

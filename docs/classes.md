@@ -70,7 +70,7 @@ Returns last result of an encoding or saving operation (enumerated as ZINT_WARN_
 
 Encodes and saves a barcode to a temporary file, managed by the ZintBarcode class. Upon successful release of the ZintBarcode object, all temporary files are deleted.
 
-`m.ImageFormat` is a graphic file extension (defaults to `"gif"`), and the angle can be set at 0, 90, 180, and 270 degrees.
+`m.ImageFormat` is a graphic file extension (defaults to `.DefaultImageFormat`), and the angle can be set at 0, 90, 180, and 270 degrees.
 
 Returns a full-path filename, or an empty string in case of error (more information given by the `.GetErrorText()` method).
 
@@ -116,6 +116,7 @@ All Set methods have a single parameter of the indicated type, except the `SetOp
 | BorderWidth | • | • | I |  |
 | *CmykModel* | • | • | I | 0 = RGB only; 1 = CMYK stored in properties, RGB as parameters or results of color functions; 2 = CMYK only. |
 | Debug | • | • | I |  |
+| *DefaultImageFormat* | • | • | C | The default image format, as an extension (`"gif"`, initially). |
 | DotSize | • | • | N |  |
 | DotsPerMM | • | • | N |  |
 | ECI | • | • | I |  |
