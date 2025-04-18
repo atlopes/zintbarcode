@@ -1040,7 +1040,14 @@ DEFINE CLASS ZintBarcode AS Custom
 	PROCEDURE GetText () AS String
 		SAFETHIS
 
-		RETURN STRCONV(ReadCharArray(This.Symbol + This.ZStructure.ZSText, This.ZStructure.ZSTextLen), 11)
+		RETURN STRCONV(This.ReadCString(This.Symbol + This.ZStructure.ZSText), 11)
+	ENDPROC
+
+	**** Text length
+	PROCEDURE GetTextLength () AS Integer
+		SAFETHIS
+
+		RETURN IIF(ISNULL(This.ZStructure.ZSTextLength), This.ZStructure.ZSTextLen, This.ReadInt(This.Symbol + This.ZStructure.ZSTextLength))
 	ENDPROC
 
 	**** Rows
@@ -1244,6 +1251,7 @@ DEFINE CLASS ZintStructure AS Custom
 	ZSGuardDescent = .NULL.
 	ZSText = .NULL.
 	ZSTextLen = .NULL.
+	ZSTextLength = .NULL.
 	ZSRows = .NULL.
 	ZSWidth = .NULL.
 	ZSPrimary = .NULL.
@@ -1284,52 +1292,55 @@ DEFINE CLASS ZintStructure AS Custom
 			m.VersionIndex = 5
 		CASE m.NVersion == 2.14
 			m.VersionIndex = 6
+		CASE m.NVersion == 2.15
+			m.VersionIndex = 7
 		OTHERWISE
 			ERROR "Unsupported Zint version."
 			RETURN .NULL.
 		ENDCASE
 
 		TEXT TO m.ZS NOSHOW FLAGS 1 PRETEXT 3
-			Symbology,0,0,0,0,0
-			Height,4,4,4,4,4
-			WhitespaceWidth,8,12,12,12,12
-			WhitespaceHeight,12,16,16,16,16
-			BorderWidth,16,20,20,20,20
-			OutputOptions,20,24,24,24,24
-			FGColour,24,28,28,28,28
-			BGColour,34,38,38,44,44
-			Outfile,52,56,56,68,68
-			OutfileLen,256,256,256,256,256
-			Scale,308,8,8,8,8
-			Option,312,440,440,452,452
-			ShowHumanReadableText,324,452,452,464,464
-			FontSize,328,456,456,-,-
-			InputMode,332,460,460,468,468
-			ECI,336,464,464,472,472
-			DotsPerMM,-,-,468,476,476
-			DotSize,30124,468,472,480,480
-			TextGap,-,-,-,484,484
-			GuardDescent,-,472,476,488,488
-			Text,340,524,528,540,540
-			TextLen,128,128,128,200,256
-			Rows,468,652,656,740,796
-			Width,472,656,660,744,800
-			Primary,476,312,312,324,324
-			PrimaryLen,128,128,128,128,128
-			EncodedData,604,660,664,748,804
-			EncodedDataLen,28600,28800,28800,28800,28800
-			RowHeight,29204,29460,29464,29548,29604
-			ErrorText,30004,30260,30264,30348,30404
-			BitmapPointer,30104,30260,30364,30448,30504
-			BitmapWidth,30108,30264,30368,30452,30508
-			BitmapHeight,30112,30268,30372,30456,30512
-			AlphamapPointer,30116,30272,30376,30460,30516
-			BitmapByteLength,30120,30276,30380,-,-
-			VectorPointer,30128,30380,30384,30464,30520
-			Debug,30132,520,524,536,536
-			WarnLevel,30136,516,520,532,532
-			MemFile,-,-,-,-,30524
-			MemFileSize,-,-,-,-,30528
+			Symbology,0,0,0,0,0,0
+			Height,4,4,4,4,4,4
+			WhitespaceWidth,8,12,12,12,12,12
+			WhitespaceHeight,12,16,16,16,16,16
+			BorderWidth,16,20,20,20,20,20
+			OutputOptions,20,24,24,24,24,24
+			FGColour,24,28,28,28,28,28
+			BGColour,34,38,38,44,44,44
+			Outfile,52,56,56,68,68,68
+			OutfileLen,256,256,256,256,256,256
+			Scale,308,8,8,8,8,8
+			Option,312,440,440,452,452,452
+			ShowHumanReadableText,324,452,452,464,464,464
+			FontSize,328,456,456,-,-,-
+			InputMode,332,460,460,468,468,468
+			ECI,336,464,464,472,472,472
+			DotsPerMM,-,-,468,476,476,476
+			DotSize,30124,468,472,480,480,480
+			TextGap,-,-,-,484,484,484
+			GuardDescent,-,472,476,488,488,488
+			Text,340,524,528,540,540,540
+			TextLen,128,128,128,200,256,256
+			TextLength,-,-,-,-,-,796
+			Rows,468,652,656,740,796,800
+			Width,472,656,660,744,800,804
+			Primary,476,312,312,324,324,324
+			PrimaryLen,128,128,128,128,128,128
+			EncodedData,604,660,664,748,804,808
+			EncodedDataLen,28600,28800,28800,28800,28800,28800
+			RowHeight,29204,29460,29464,29548,29604,29608
+			ErrorText,30004,30260,30264,30348,30404,30408
+			BitmapPointer,30104,30260,30364,30448,30504,30508
+			BitmapWidth,30108,30264,30368,30452,30508,30512
+			BitmapHeight,30112,30268,30372,30456,30512,30516
+			AlphamapPointer,30116,30272,30376,30460,30516,30520
+			BitmapByteLength,30120,30276,30380,-,-,-
+			VectorPointer,30128,30380,30384,30464,30520,30524
+			Debug,30132,520,524,536,536,536
+			WarnLevel,30136,516,520,532,532,532
+			MemFile,-,-,-,-,30524,30528
+			MemFileSize,-,-,-,-,30528,50532
 		ENDTEXT
 
 		FOR m.Member = 1 TO ALINES(m.Members, m.ZS)
@@ -1394,6 +1405,7 @@ DEFINE CLASS ZintEnumerations AS Custom
 	BARCODE_PHARMA = 51
 	BARCODE_PZN = 52
 	BARCODE_PHARMA_TWO = 53
+	BARCODE_CEPNET = 54
 	BARCODE_PDF417 = 55
 	BARCODE_PDF417COMP = 56
 	BARCODE_PDF417TRUNC = 56 && Legacy

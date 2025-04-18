@@ -145,6 +145,7 @@ All Set methods have a single parameter of the indicated type, except the `SetOp
 | ShowHumanReadableText | • | • | L |  |
 | Symbology | • | • | I |  |
 | Text |  | • | C |  |
+| TextLength |  | • | I |  |
 | TextGap | • | • | N |  |
 | VectorPointer |  | • | I |  |
 | WarnLevel | • | • | I |  |
